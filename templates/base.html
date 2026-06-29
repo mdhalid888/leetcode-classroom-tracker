@@ -63,7 +63,16 @@
                     </div>
                 </form>
 
-                {% if g.current_student %}
+                {% if session.get('is_admin') and request.path.startswith('/admin') %}
+                <div class="d-flex align-items-center me-3">
+                    <span class="fs-7 fw-semibold text-secondary-custom me-2 d-none d-md-inline">
+                        Welcome back, <span class="text-easy">Admin</span>
+                    </span>
+                    <a href="{{ url_for('admin_logout') }}" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1 fw-bold fs-8">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </a>
+                </div>
+                {% elif g.current_student %}
                 <div class="d-flex align-items-center me-3">
                     <span class="fs-7 fw-semibold text-secondary-custom me-2 d-none d-md-inline">
                         Hi, <span class="text-easy">{{ g.current_student.name }}</span> ({{ g.current_student.department }}_{{ g.current_student.academic_year }})
