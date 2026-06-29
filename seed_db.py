@@ -47,12 +47,8 @@ def seed_classmates():
             
             print(f"Processing class file: {f} ...")
             try:
-                # Bypass Windows Excel file locks using PowerShell Copy-Item
-                subprocess.run(
-                    ["powershell", "-Command", f"Copy-Item -Path '{file_path}' -Destination '{temp_path}' -Force"],
-                    check=True,
-                    capture_output=True
-                )
+                # Cross-platform copy (works on both Windows and Linux without subprocess)
+                shutil.copy2(file_path, temp_path)
                 df = pd.read_excel(temp_path)
                 if os.path.exists(temp_path):
                     os.remove(temp_path)

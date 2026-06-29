@@ -555,6 +555,38 @@ def scan_uploads():
             flash(f"Error scanning uploads: {e}", "error")
     return redirect(url_for('admin_view'))
 
+@app.route('/admin/upload-file', methods=['POST'])
+def upload_file():
+    if 'class_file' not in request.files:
+        flash("No file selected for upload.", "error")
+        return redirect(url_for('admin_view'))
+        
+    file = request.files['class_file']
+    if file.filename == '':
+        flash("No file selected.", "error")
+        return redirect(url_for('admin_view'))
+        
+    if file and file.filename.endswith('.xlsx'):
+        uploads_dir = os.path.join(app.root_path, 'uploads')
+        if not os.path.exists(uploads_dir):
+            os.makedirs(uploads_dir)
+            
+        from werkzeug.utils import secure_filename
+        safe_filename = secure_filename(file.filename)
+        dest_path = os.path.join(uploads_dir, safe_filename)
+        file.save(dest_path)
+        
+        try:
+            from seed_db import seed_classmates
+            seed_classmates()
+            flash(f"File '{safe_filename}' uploaded and synced successfully.", "success")
+        except Exception as e:
+            flash(f"File uploaded, but database sync failed: {e}", "error")
+    else:
+        flash("Only Excel (.xlsx) files are allowed.", "error")
+        
+    return redirect(url_for('admin_view'))
+
 # MANUAL SYNC ACTIONS (ASYNC THREAD)
 
 @app.route('/admin/trigger-update', methods=['POST'])

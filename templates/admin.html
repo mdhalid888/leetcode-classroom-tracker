@@ -52,7 +52,7 @@
                 {% if detected_files %}
                     <ul class="list-group list-group-flush fs-7 bg-transparent">
                         {% for f in detected_files %}
-                            <li class="list-group-item bg-transparent text-light border-secondary border-opacity-10 px-0 d-flex justify-content-between align-items-center">
+                            <li class="list-group-item bg-transparent border-secondary border-opacity-10 px-0 d-flex justify-content-between align-items-center">
                                 <span><i class="bi bi-file-earmark-spreadsheet-fill text-success me-2 text-decoration-none"></i>{{ f.name }}</span>
                                 <span class="badge bg-secondary rounded-pill fs-8">{{ f.dept }} - Year {{ f.year }}</span>
                             </li>
@@ -68,6 +68,22 @@
             <form action="{{ url_for('scan_uploads') }}" method="POST">
                 <button type="submit" class="btn btn-easy text-dark fw-bold rounded-pill px-4">
                     <i class="bi bi-search me-1"></i> Scan & Sync Class Databases
+                </button>
+            </form>
+        </div>
+
+        <!-- Upload Class Database Card -->
+        <div class="card-glass p-4 mt-4">
+            <h3 class="fs-4 mb-3"><i class="bi bi-cloud-upload-fill text-easy me-2"></i>Upload Class List</h3>
+            <p class="text-secondary-custom fs-7 mb-4">
+                Upload a class student Excel file (e.g. <code>IT_4.xlsx</code>). The file must contain columns like: <code>Name</code>, <code>Register Number</code>, and <code>LeetCode Username</code>.
+            </p>
+            <form action="{{ url_for('upload_file') }}" method="POST" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <input class="form-control login-input fs-7" type="file" id="class_file" name="class_file" accept=".xlsx" required>
+                </div>
+                <button type="submit" class="btn btn-easy text-dark fw-bold rounded-pill px-4">
+                    <i class="bi bi-upload me-1"></i> Upload & Sync
                 </button>
             </form>
         </div>
