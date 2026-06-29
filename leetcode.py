@@ -75,8 +75,8 @@ def parse_submission_calendar(calendar_str):
         parsed = {}
         for ts_str, count in calendar_data.items():
             ts = int(ts_str)
-            # LeetCode timestamps in the calendar are at 00:00:00 UTC for each day
-            dt = datetime.fromtimestamp(ts, tz=timezone.utc).date()
+            # Convert LeetCode UTC timestamp to IST date (India Standard Time)
+            dt = datetime.fromtimestamp(ts, tz=timezone(timedelta(hours=5, minutes=30))).date()
             parsed[dt] = count
         return parsed
     except Exception as e:
@@ -121,8 +121,8 @@ def calculate_streaks(parsed_calendar):
     if temp_streak > max_streak:
         max_streak = temp_streak
         
-    # Calculate current streak ending today or yesterday
-    today = date.today()
+    # Calculate current streak ending today or yesterday (IST)
+    today = datetime.now(timezone(timedelta(hours=5, minutes=30))).date()
     yesterday = today - timedelta(days=1)
     
     current_streak = 0
@@ -141,9 +141,9 @@ def calculate_streaks(parsed_calendar):
 
 def calculate_period_solves(parsed_calendar):
     """
-    Calculates problems solved today, weekly (last 7 days), and monthly (last 30 days).
+    Calculates problems solved today, weekly (last 7 days), and monthly (last 30 days) in IST.
     """
-    today = date.today()
+    today = datetime.now(timezone(timedelta(hours=5, minutes=30))).date()
     
     today_solves = parsed_calendar.get(today, 0)
     

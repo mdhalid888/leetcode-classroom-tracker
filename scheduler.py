@@ -170,7 +170,7 @@ def update_single_student(student_id, app):
         # Today's high solves milestone
         if today_solves >= 10:
             # check if we already notified for this today
-            today_date = date.today()
+            today_date = datetime.now(timezone(timedelta(hours=5, minutes=30))).date()
             snap = DailySnapshot.query.filter_by(student_id=student.id, date=today_date).first()
             # If not yet captured 10 solves in snapshot, notify
             if not snap or snap.daily_solves < 10:
@@ -214,7 +214,7 @@ def update_single_student(student_id, app):
                 db.session.add(new_sub)
                 
         # Update DailySnapshot for today
-        today_date = date.today()
+        today_date = datetime.now(timezone(timedelta(hours=5, minutes=30))).date()
         snap = DailySnapshot.query.filter_by(student_id=student.id, date=today_date).first()
         if snap:
             snap.total_solved = total
@@ -317,7 +317,7 @@ def generate_weekly_report(app):
     Typically run at Sunday midnight.
     """
     with app.app_context():
-        today_val = date.today()
+        today_val = datetime.now(timezone(timedelta(hours=5, minutes=30))).date()
         # Find start of current week (Monday)
         start_of_week = today_val - timedelta(days=today_val.weekday())
         

@@ -191,7 +191,7 @@ def dashboard():
         total_solves = db.session.query(db.func.sum(Student.total_solved)).filter(Student.id.in_(classmate_ids)).scalar() or 0
     
     # Today's solves for classmates
-    today_date = date.today()
+    today_date = datetime.now(timezone(timedelta(hours=5, minutes=30))).date()
     today_solves = 0
     if classmate_ids:
         today_solves = db.session.query(db.func.sum(DailySnapshot.daily_solves)).filter(
@@ -270,7 +270,7 @@ def leaderboard_view():
             
     students = query.all()
     
-    today_val = date.today()
+    today_val = datetime.now(timezone(timedelta(hours=5, minutes=30))).date()
     seven_days_ago = today_val - timedelta(days=7)
     thirty_days_ago = today_val - timedelta(days=30)
     
@@ -334,7 +334,7 @@ def student_profile(student_id):
         sub.time_ago = time_ago(sub.timestamp)
         
     # Today, weekly, monthly solves
-    today_val = date.today()
+    today_val = datetime.now(timezone(timedelta(hours=5, minutes=30))).date()
     
     today_snap = DailySnapshot.query.filter_by(student_id=student.id, date=today_val).first()
     today_solves = today_snap.daily_solves if today_snap else 0
@@ -433,7 +433,7 @@ def compare_view():
 
 @app.route('/attendance')
 def attendance_view():
-    today = date.today()
+    today = datetime.now(timezone(timedelta(hours=5, minutes=30))).date()
     month = request.args.get('month', today.month, type=int)
     year = request.args.get('year', today.year, type=int)
     
@@ -709,7 +709,7 @@ def download_report(format):
     students = Student.query.filter_by(is_active=True).order_by(Student.total_solved.desc()).all()
     
     # Calculate period solves for report headers
-    today_val = date.today()
+    today_val = datetime.now(timezone(timedelta(hours=5, minutes=30))).date()
     for s in students:
         today_snap = DailySnapshot.query.filter_by(student_id=s.id, date=today_val).first()
         s.today_solves = today_snap.daily_solves if today_snap else 0
