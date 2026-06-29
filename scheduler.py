@@ -22,14 +22,14 @@ COMMON_DIFFICULTIES = {
     'two-sum': 'Easy'
 }
 
+_difficulty_cache = {}
+
 def get_problem_difficulty(title_slug):
     if title_slug in COMMON_DIFFICULTIES:
         return COMMON_DIFFICULTIES[title_slug]
         
-    # Check if we already have this problem solved in the database to reuse its difficulty
-    existing = Submission.query.filter_by(title_slug=title_slug).first()
-    if existing:
-        return existing.difficulty
+    if title_slug in _difficulty_cache:
+        return _difficulty_cache[title_slug]
         
     # Query LeetCode API to fetch the official difficulty
     url = "https://leetcode.com/graphql"
@@ -47,7 +47,9 @@ def get_problem_difficulty(title_slug):
         if res.status_code == 200:
             q = res.json().get("data", {}).get("question", {})
             if q and q.get("difficulty"):
-                return q.get("difficulty")
+                diff = q.get("difficulty")
+                _difficulty_cache[title_slug] = diff
+                return diff
     except Exception as e:
         print(f"Error fetching difficulty for {title_slug}: {e}")
         
