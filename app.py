@@ -13,7 +13,10 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'lc-classroom-tracker-se
 
 # Dynamic database configuration (supports Render persistent disk)
 db_url = os.environ.get('DATABASE_URL')
-if not db_url:
+if db_url:
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
+else:
     if os.path.exists('/data'):
         db_url = 'sqlite:////data/database.db'
     else:
