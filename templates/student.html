@@ -110,7 +110,7 @@
         <div class="card-glass p-4 h-100">
             <h3 class="fs-5 mb-4"><i class="bi bi-graph-up text-easy me-2"></i>Progress (Past 30 Days)</h3>
             <div style="height: 320px; position: relative;">
-                <canvas id="progressChart" data-dates="{{ graph_dates }}" data-counts="{{ graph_counts }}"></canvas>
+                <canvas id="progressChart" data-dates='{{ graph_dates | tojson }}' data-counts='{{ graph_counts | tojson }}'></canvas>
             </div>
         </div>
     </div>

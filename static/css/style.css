@@ -394,3 +394,75 @@ h1, h2, h3, h4, h5, h6 {
     transform: translateY(-3px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
+
+/* Theme Adaptive Form Select (Dropdowns) */
+.form-select-custom {
+    transition: all 0.3s ease;
+    border: 1px solid rgba(128, 128, 128, 0.25) !important;
+}
+
+.light-theme .form-select-custom {
+    background-color: #ffffff !important;
+    color: var(--text-primary-light) !important;
+}
+
+.dark-theme .form-select-custom {
+    background-color: #1e293b !important;
+    color: var(--text-primary-dark) !important;
+}
+
+/* Theme Adaptive Search Input */
+.search-input {
+    transition: color 0.4s ease;
+}
+
+.light-theme .search-input {
+    color: var(--text-primary-light) !important;
+}
+
+.dark-theme .search-input {
+    color: var(--text-primary-dark) !important;
+}
+
+/* Daily Solving Attendance Table Header Custom Styling */
+.attendance-header th {
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    border-top: none;
+    padding: 10px 16px;
+    vertical-align: middle;
+}
+
+.light-theme .attendance-header th {
+    background-color: #f1f5f9 !important;
+    color: var(--text-primary-light) !important;
+    border-bottom: 2px solid rgba(0,0,0,0.15) !important;
+}
+
+.dark-theme .attendance-header th {
+    background-color: #1e293b !important;
+    color: var(--text-primary-dark) !important;
+    border-bottom: 2px solid rgba(255,255,255,0.15) !important;
+}
+
+/* Sticky Column Header backgrounds */
+.light-theme .attendance-header-first {
+    background-color: #f1f5f9 !important;
+    color: var(--text-primary-light) !important;
+}
+
+.dark-theme .attendance-header-first {
+    background-color: #1e293b !important;
+    color: var(--text-primary-dark) !important;
+}
+
+/* Sticky Row Name Cell backgrounds (forces solid color to hide scroll overlaps) */
+.light-theme .attendance-name-cell {
+    background-color: #ffffff !important;
+    color: var(--text-primary-light) !important;
+}
+
+.dark-theme .attendance-name-cell {
+    background-color: #1e293b !important;
+    color: var(--text-primary-dark) !important;
+}
