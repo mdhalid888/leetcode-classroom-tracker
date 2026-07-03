@@ -256,8 +256,15 @@ def dashboard():
 @app.route('/leaderboard')
 def leaderboard_view():
     active_filter = request.args.get('filter', 'overall')
-    dept = request.args.get('dept', 'ALL').strip().upper()
-    year = request.args.get('year', 'ALL').strip()
+    
+    default_dept = 'ALL'
+    default_year = 'ALL'
+    if g.current_student:
+        default_dept = g.current_student.department
+        default_year = str(g.current_student.academic_year)
+        
+    dept = request.args.get('dept', default_dept).strip().upper()
+    year = request.args.get('year', default_year).strip()
     
     query = Student.query.filter_by(is_active=True)
     if dept != 'ALL':
@@ -699,6 +706,29 @@ def upload_excel():
             
     else:
         flash("Invalid file format. Only .xlsx files are supported.", "error")
+        
+    return redirect(url_for('admin_view'))
+
+@app.route('/admin/delete-file/<filename>', methods=['POST'])
+def delete_file(filename):
+    if not session.get('is_admin'):
+        return redirect(url_for('admin_login'))
+        
+    from werkzeug.utils import secure_filename
+    safe_filename = secure_filename(filename)
+    file_path = os.path.join(app.root_path, 'uploads', safe_filename)
+    
+    if os.path.exists(file_path):
+        try:
+            os.remove(file_path)
+            # Sync database after deletion by running seed_classmates
+            from seed_db import seed_classmates
+            seed_classmates()
+            flash(f"File '{safe_filename}' deleted and classroom database synced successfully.", "success")
+        except Exception as e:
+            flash(f"Error deleting file: {e}", "error")
+    else:
+        flash("File not found.", "error")
         
     return redirect(url_for('admin_view'))
 
