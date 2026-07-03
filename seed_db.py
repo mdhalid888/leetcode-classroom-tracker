@@ -3,14 +3,23 @@ import shutil
 import subprocess
 import pandas as pd
 from app import app, db
-from models import Student, parse_registration_number
+from models import Student, Notification, WeeklyReport, parse_registration_number
 
 def seed_classmates():
     with app.app_context():
         print("Clearing all existing database records...")
-        db.drop_all()
-        db.create_all()
-        print("Database schema reset successfully.")
+        try:
+            Student.query.delete()
+            Notification.query.delete()
+            WeeklyReport.query.delete()
+            db.session.commit()
+            print("Database records cleared successfully.")
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error clearing records, running fallback schema reset: {e}")
+            db.drop_all()
+            db.create_all()
+            print("Database schema reset successfully.")
         
         uploads_dir = os.path.join(app.root_path, 'uploads')
         if not os.path.exists(uploads_dir):
