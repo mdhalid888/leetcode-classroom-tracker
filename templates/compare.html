@@ -9,7 +9,31 @@
 
     <!-- Compare Selection Form -->
     <form action="{{ url_for('compare_view') }}" method="GET" class="row g-3 align-items-end">
-        <div class="col-md-5">
+        <!-- Filters -->
+        <div class="col-md-3">
+            <label for="deptSelect" class="form-label fw-semibold text-secondary-custom fs-7">Filter Dept</label>
+            <select id="deptSelect" name="dept" class="form-select bg-dark text-light border-secondary border-opacity-35 rounded-3 py-2" onchange="this.form.submit()">
+                <option value="ALL" {% if active_dept == 'ALL' %}selected{% endif %}>All Departments</option>
+                <option value="CSE" {% if active_dept == 'CSE' %}selected{% endif %}>CSE</option>
+                <option value="IT" {% if active_dept == 'IT' %}selected{% endif %}>IT</option>
+                <option value="CCE" {% if active_dept == 'CCE' %}selected{% endif %}>CCE</option>
+                <option value="AI ML" {% if active_dept == 'AI ML' %}selected{% endif %}>AI ML</option>
+                <option value="CYBER" {% if active_dept == 'CYBER' %}selected{% endif %}>CYBER</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="yearSelect" class="form-label fw-semibold text-secondary-custom fs-7">Filter Year</label>
+            <select id="yearSelect" name="year" class="form-select bg-dark text-light border-secondary border-opacity-35 rounded-3 py-2" onchange="this.form.submit()">
+                <option value="ALL" {% if active_year == 'ALL' %}selected{% endif %}>All Years</option>
+                <option value="4" {% if active_year == '4' %}selected{% endif %}>4th Year</option>
+                <option value="3" {% if active_year == '3' %}selected{% endif %}>3rd Year</option>
+                <option value="2" {% if active_year == '2' %}selected{% endif %}>2nd Year</option>
+            </select>
+        </div>
+        
+        <div class="col-md-6 d-none d-md-block"></div> <!-- Spacer -->
+
+        <div class="col-md-5 mt-3">
             <label for="s1" class="form-label fw-semibold text-secondary-custom">Student A</label>
             <select name="s1" id="s1" class="form-select bg-dark text-light border-secondary border-opacity-35 rounded-3 py-2">
                 <option value="">-- Select Student --</option>
@@ -23,7 +47,7 @@
             <span class="fs-4 fw-extrabold text-secondary-custom">VS</span>
         </div>
         
-        <div class="col-md-5">
+        <div class="col-md-5 mt-3">
             <label for="s2" class="form-label fw-semibold text-secondary-custom">Student B</label>
             <select name="s2" id="s2" class="form-select bg-dark text-light border-secondary border-opacity-35 rounded-3 py-2">
                 <option value="">-- Select Student --</option>

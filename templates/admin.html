@@ -25,18 +25,66 @@
                 Reports include student registration numbers, total solved counts, streak data, and last update times.
             </p>
             
+            <!-- Roster Filters for Exports -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label for="reportDeptSelect" class="form-label fw-semibold text-secondary-custom fs-7">Filter Department</label>
+                    <select id="reportDeptSelect" class="form-select bg-dark text-light border-secondary border-opacity-35 rounded-3 py-2">
+                        <option value="ALL">All Departments</option>
+                        <option value="CSE">CSE</option>
+                        <option value="IT">IT</option>
+                        <option value="CCE">CCE</option>
+                        <option value="AI ML">AI ML</option>
+                        <option value="CYBER">CYBER</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="reportYearSelect" class="form-label fw-semibold text-secondary-custom fs-7">Filter Academic Year</label>
+                    <select id="reportYearSelect" class="form-select bg-dark text-light border-secondary border-opacity-35 rounded-3 py-2">
+                        <option value="ALL">All Years</option>
+                        <option value="4">4th Year</option>
+                        <option value="3">3rd Year</option>
+                        <option value="2">2nd Year</option>
+                    </select>
+                </div>
+            </div>
+            
             <div class="row g-3">
                 <div class="col-md-6">
-                    <a href="{{ url_for('download_report', format='csv') }}" class="btn-download-report w-100 fw-bold fs-7 text-decoration-none">
+                    <a href="{{ url_for('download_report', format='csv') }}" id="btnExportCSV" class="btn-download-report w-100 fw-bold fs-7 text-decoration-none">
                         <i class="bi bi-filetype-csv fs-3 mb-2 text-warning d-block"></i> Export CSV
                     </a>
                 </div>
                 <div class="col-md-6">
-                    <a href="{{ url_for('download_report', format='pdf') }}" class="btn-download-report w-100 fw-bold fs-7 text-decoration-none">
+                    <a href="{{ url_for('download_report', format='pdf') }}" id="btnExportPDF" class="btn-download-report w-100 fw-bold fs-7 text-decoration-none">
                         <i class="bi bi-file-pdf fs-3 mb-2 text-danger d-block"></i> Export PDF
                     </a>
                 </div>
             </div>
+            
+            <script>
+                document.addEventListener("DOMContentLoaded", () => {
+                    const reportDept = document.getElementById("reportDeptSelect");
+                    const reportYear = document.getElementById("reportYearSelect");
+                    const btnCSV = document.getElementById("btnExportCSV");
+                    const btnPDF = document.getElementById("btnExportPDF");
+                    
+                    function updateReportUrls() {
+                        const dept = reportDept.value;
+                        const year = reportYear.value;
+                        
+                        btnCSV.href = `{{ url_for('download_report', format='csv') }}?dept=${dept}&year=${year}`;
+                        btnPDF.href = `{{ url_for('download_report', format='pdf') }}?dept=${dept}&year=${year}`;
+                    }
+                    
+                    if (reportDept && reportYear) {
+                        reportDept.addEventListener("change", updateReportUrls);
+                        reportYear.addEventListener("change", updateReportUrls);
+                        // Initial run
+                        updateReportUrls();
+                    }
+                });
+            </script>
         </div>
 
         <!-- Class Database Scanner Card -->

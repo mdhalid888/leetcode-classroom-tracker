@@ -215,13 +215,24 @@ def update_single_student(student_id, app):
                 
         # Update DailySnapshot for today
         today_date = datetime.now(timezone(timedelta(hours=5, minutes=30))).date()
+        
+        # Calculate unique solves today in IST
+        ist_start = datetime(today_date.year, today_date.month, today_date.day, 0, 0, 0) - timedelta(hours=5, minutes=30)
+        ist_end = datetime(today_date.year, today_date.month, today_date.day, 23, 59, 59) - timedelta(hours=5, minutes=30)
+        
+        unique_today_solves = db.session.query(Submission.title_slug).filter(
+            Submission.student_id == student.id,
+            Submission.timestamp >= ist_start,
+            Submission.timestamp <= ist_end
+        ).distinct().count()
+        
         snap = DailySnapshot.query.filter_by(student_id=student.id, date=today_date).first()
         if snap:
             snap.total_solved = total
             snap.easy_solved = easy
             snap.medium_solved = medium
             snap.hard_solved = hard
-            snap.daily_solves = today_solves
+            snap.daily_solves = unique_today_solves
         else:
             new_snap = DailySnapshot(
                 student_id=student.id,
@@ -230,7 +241,7 @@ def update_single_student(student_id, app):
                 easy_solved=easy,
                 medium_solved=medium,
                 hard_solved=hard,
-                daily_solves=today_solves
+                daily_solves=unique_today_solves
             )
             db.session.add(new_snap)
             

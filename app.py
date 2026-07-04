@@ -194,21 +194,31 @@ def dashboard():
     if classmate_ids:
         total_solves = db.session.query(db.func.sum(Student.total_solved)).filter(Student.id.in_(classmate_ids)).scalar() or 0
     
-    # Today's solves for classmates
+    # Today's solves for classmates (unique problems solved today in IST)
     today_date = datetime.now(timezone(timedelta(hours=5, minutes=30))).date()
     today_solves = 0
+    
+    # Calculate IST today boundaries in UTC
+    ist_start = datetime(today_date.year, today_date.month, today_date.day, 0, 0, 0) - timedelta(hours=5, minutes=30)
+    ist_end = datetime(today_date.year, today_date.month, today_date.day, 23, 59, 59) - timedelta(hours=5, minutes=30)
+    
     if classmate_ids:
-        today_solves = db.session.query(db.func.sum(DailySnapshot.daily_solves)).filter(
-            DailySnapshot.student_id.in_(classmate_ids),
-            DailySnapshot.date == today_date
-        ).scalar() or 0
+        # Sum of unique solved problems today per classmate
+        today_solves = db.session.query(Submission.student_id, Submission.title_slug).filter(
+            Submission.student_id.in_(classmate_ids),
+            Submission.timestamp >= ist_start,
+            Submission.timestamp <= ist_end
+        ).distinct().count()
     
     # Top 5 solvers for class leaderboard snippet
     top_students = Student.query.filter_by(department=class_dept, academic_year=class_year, is_active=True).order_by(Student.total_solved.desc()).limit(5).all()
-    # Add dynamic today's solves to top students
+    # Add dynamic unique today's solves to top students
     for student in top_students:
-        snap = DailySnapshot.query.filter_by(student_id=student.id, date=today_date).first()
-        student.today_solves = snap.daily_solves if snap else 0
+        student.today_solves = db.session.query(Submission.title_slug).filter(
+            Submission.student_id == student.id,
+            Submission.timestamp >= ist_start,
+            Submission.timestamp <= ist_end
+        ).distinct().count()
 
     # Recent submissions feed for class
     recent_submissions = []
@@ -285,10 +295,17 @@ def leaderboard_view():
     seven_days_ago = today_val - timedelta(days=7)
     thirty_days_ago = today_val - timedelta(days=30)
     
+    # Calculate IST today boundaries in UTC
+    ist_start = datetime(today_val.year, today_val.month, today_val.day, 0, 0, 0) - timedelta(hours=5, minutes=30)
+    ist_end = datetime(today_val.year, today_val.month, today_val.day, 23, 59, 59) - timedelta(hours=5, minutes=30)
+    
     # Dynamically inject temporary variables for sorting/rendering
     for s in students:
-        today_snap = DailySnapshot.query.filter_by(student_id=s.id, date=today_val).first()
-        s.today_solves = today_snap.daily_solves if today_snap else 0
+        s.today_solves = db.session.query(Submission.title_slug).filter(
+            Submission.student_id == s.id,
+            Submission.timestamp >= ist_start,
+            Submission.timestamp <= ist_end
+        ).distinct().count()
         
         weekly_snaps = DailySnapshot.query.filter(
             DailySnapshot.student_id == s.id,
@@ -347,8 +364,15 @@ def student_profile(student_id):
     # Today, weekly, monthly solves
     today_val = datetime.now(timezone(timedelta(hours=5, minutes=30))).date()
     
-    today_snap = DailySnapshot.query.filter_by(student_id=student.id, date=today_val).first()
-    today_solves = today_snap.daily_solves if today_snap else 0
+    # Calculate IST today boundaries in UTC
+    ist_start = datetime(today_val.year, today_val.month, today_val.day, 0, 0, 0) - timedelta(hours=5, minutes=30)
+    ist_end = datetime(today_val.year, today_val.month, today_val.day, 23, 59, 59) - timedelta(hours=5, minutes=30)
+    
+    today_solves = db.session.query(Submission.title_slug).filter(
+        Submission.student_id == student.id,
+        Submission.timestamp >= ist_start,
+        Submission.timestamp <= ist_end
+    ).distinct().count()
     
     weekly_snaps = DailySnapshot.query.filter(
         DailySnapshot.student_id == student.id,
@@ -425,7 +449,25 @@ def student_profile(student_id):
 
 @app.route('/compare')
 def compare_view():
-    all_students = Student.query.filter_by(is_active=True).order_by(Student.name).all()
+    default_dept = 'ALL'
+    default_year = 'ALL'
+    if g.current_student:
+        default_dept = g.current_student.department
+        default_year = str(g.current_student.academic_year)
+        
+    dept = request.args.get('dept', default_dept).strip().upper()
+    year = request.args.get('year', default_year).strip()
+    
+    query = Student.query.filter_by(is_active=True)
+    if dept != 'ALL':
+        query = query.filter_by(department=dept)
+    if year != 'ALL':
+        try:
+            query = query.filter_by(academic_year=int(year))
+        except ValueError:
+            pass
+            
+    all_students = query.order_by(Student.name).all()
     s1_id = request.args.get('s1')
     s2_id = request.args.get('s2')
     
@@ -435,11 +477,20 @@ def compare_view():
         s1 = Student.query.get(s1_id)
         s2 = Student.query.get(s2_id)
         
+    # Ensure selected students are always present in the select options
+    if s1 and s1 not in all_students:
+        all_students.append(s1)
+    if s2 and s2 not in all_students:
+        all_students.append(s2)
+    all_students.sort(key=lambda x: x.name)
+        
     return render_template(
         'compare.html',
         all_students=all_students,
         s1=s1,
-        s2=s2
+        s2=s2,
+        active_dept=dept,
+        active_year=year
     )
 
 @app.route('/attendance')
@@ -472,13 +523,26 @@ def attendance_view():
         active_days_count = 0
         
         for d in days:
+            # Check if this day is in the future (upcoming) relative to IST today
+            is_upcoming = False
+            if year > today.year:
+                is_upcoming = True
+            elif year == today.year:
+                if month > today.month:
+                    is_upcoming = True
+                elif month == today.month:
+                    if d > today.day:
+                        is_upcoming = True
+                        
             solves = snap_map.get(d, 0)
             if solves > 0:
-                days_solved.append(True)
+                days_solved.append('solved')
                 total_solves_this_month += solves
                 active_days_count += 1
+            elif is_upcoming:
+                days_solved.append('upcoming')
             else:
-                days_solved.append(False)
+                days_solved.append('no_solves')
                 
         solve_rate = round((active_days_count / num_days) * 100, 1) if num_days > 0 else 0
         
@@ -740,19 +804,50 @@ def delete_file(filename):
 
 @app.route('/admin/download/<format>')
 def download_report(format):
-    students = Student.query.filter_by(is_active=True).order_by(Student.total_solved.desc()).all()
+    if not session.get('is_admin'):
+        return redirect(url_for('admin_login'))
+        
+    dept = request.args.get('dept', 'ALL').strip().upper()
+    year = request.args.get('year', 'ALL').strip()
     
-    # Calculate period solves for report headers
+    query = Student.query.filter_by(is_active=True)
+    if dept != 'ALL':
+        query = query.filter_by(department=dept)
+    if year != 'ALL':
+        try:
+            query = query.filter_by(academic_year=int(year))
+        except ValueError:
+            pass
+            
+    students = query.order_by(Student.total_solved.desc()).all()
+    
+    # Calculate period solves for report headers (using unique solves today in IST)
     today_val = datetime.now(timezone(timedelta(hours=5, minutes=30))).date()
+    
+    # Calculate IST today boundaries in UTC for unique solves count today
+    ist_start = datetime(today_val.year, today_val.month, today_val.day, 0, 0, 0) - timedelta(hours=5, minutes=30)
+    ist_end = datetime(today_val.year, today_val.month, today_val.day, 23, 59, 59) - timedelta(hours=5, minutes=30)
+    
     for s in students:
-        today_snap = DailySnapshot.query.filter_by(student_id=s.id, date=today_val).first()
-        s.today_solves = today_snap.daily_solves if today_snap else 0
+        s.today_solves = db.session.query(Submission.title_slug).filter(
+            Submission.student_id == s.id,
+            Submission.timestamp >= ist_start,
+            Submission.timestamp <= ist_end
+        ).distinct().count()
         
         weekly_snaps = DailySnapshot.query.filter(
             DailySnapshot.student_id == s.id,
             DailySnapshot.date >= today_val - timedelta(days=7)
         ).all()
         s.weekly_solves = sum(snap.daily_solves for snap in weekly_snaps)
+        
+    # Generate dynamic titles and filename suffixes
+    file_suffix = ""
+    report_title = "LeetCode Classroom Tracker Report"
+    if dept != 'ALL' or year != 'ALL':
+        class_label = f"{dept if dept != 'ALL' else 'ALL'}_{year if year != 'ALL' else 'ALL'}"
+        file_suffix = f"_{class_label}"
+        report_title = f"LeetCode Report - {class_label}"
         
     if format == 'csv':
         import csv
@@ -779,7 +874,7 @@ def download_report(format):
             io.BytesIO(output.getvalue().encode('utf-8')),
             mimetype="text/csv",
             as_attachment=True,
-            download_name=f"leetcode_report_{today_val.isoformat()}.csv"
+            download_name=f"leetcode_report_{today_val.isoformat()}{file_suffix}.csv"
         )
         
     elif format == 'excel':
@@ -824,7 +919,7 @@ def download_report(format):
             for col_num, value in enumerate(df.columns.values):
                 worksheet.write(0, col_num, value, header_format)
                 # Auto-adjust column widths
-                max_len = max(df[value].astype(str).map(len).max(), len(value)) + 3
+                max_len = max(df[value].astype(str).map(len).max(), len(value)) + 3 if not df.empty else len(value) + 3
                 worksheet.set_column(col_num, col_num, max_len)
                 
         output.seek(0)
@@ -832,7 +927,7 @@ def download_report(format):
             output,
             mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             as_attachment=True,
-            download_name=f"leetcode_report_{today_val.isoformat()}.xlsx"
+            download_name=f"leetcode_report_{today_val.isoformat()}{file_suffix}.xlsx"
         )
         
     elif format == 'pdf':
@@ -871,7 +966,7 @@ def download_report(format):
             spaceAfter=25
         )
         
-        story.append(Paragraph("LeetCode Classroom Tracker Report", title_style))
+        story.append(Paragraph(report_title, title_style))
         story.append(Paragraph(f"Generated on {datetime.now().strftime('%B %d, %Y %I:%M %p')} | Total Solvers: {len(students)}", subtitle_style))
         
         # Table Columns: Reg Number, Name, Username, Total, Easy, Medium, Hard, Acceptance %, Current Streak, Contest Rating
@@ -920,7 +1015,7 @@ def download_report(format):
             output,
             mimetype="application/pdf",
             as_attachment=True,
-            download_name=f"leetcode_report_{today_val.isoformat()}.pdf"
+            download_name=f"leetcode_report_{today_val.isoformat()}{file_suffix}.pdf"
         )
         
     flash("Invalid download format.", "error")

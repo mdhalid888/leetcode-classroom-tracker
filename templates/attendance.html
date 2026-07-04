@@ -48,10 +48,12 @@
                         </a>
                     </td>
                     
-                    {% for solved in record.days_solved %}
+                    {% for status in record.days_solved %}
                     <td class="cell-att">
-                        {% if solved %}
+                        {% if status == 'solved' %}
                         <span class="text-success" title="Solved problems"><i class="bi bi-check-circle-fill"></i></span>
+                        {% elif status == 'upcoming' %}
+                        <span class="text-secondary opacity-35" title="Upcoming day"><i class="bi bi-circle"></i></span>
                         {% else %}
                         <span class="text-danger border-opacity-10" title="No solves"><i class="bi bi-x-circle"></i></span>
                         {% endif %}
