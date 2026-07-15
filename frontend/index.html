@@ -108,10 +108,10 @@
                                 <thead>
                                     <tr>
                                         <th scope="col" style="width: 80px;">Rank</th>
-                                        <th scope="col">Name</th>
-                                        <th scope="col" class="text-center">Total Solved</th>
-                                        <th scope="col" class="text-center">Today</th>
-                                        <th scope="col" class="text-center">Streak</th>
+                                        <th scope="col">Student</th>
+                                        <th scope="col" class="text-center">Solved</th>
+                                        <th scope="col" class="text-center">Breakdown</th>
+                                        <th scope="col" class="text-center">Activity</th>
                                     </tr>
                                 </thead>
                                 <tbody id="topSolversBody">
@@ -279,22 +279,31 @@
                                 
                                 const tr = document.createElement("tr");
                                 tr.innerHTML = `
-                                    <td class="fw-bold fs-5 text-secondary-custom">${medal}</td>
-                                    <td>
+                                    <td class="fw-bold fs-5 text-secondary-custom align-middle">${medal}</td>
+                                    <td class="align-middle">
                                         <a href="${(window.getPageUrl || ((p) => p))('student.html')}?id=${s.id}" class="fw-bold text-decoration-none text-reset d-flex align-items-center">
-                                            <img src="${avatar}" alt="${s.name}" class="rounded-circle me-3" style="width: 32px; height: 32px; object-fit: cover;">
+                                            <img src="${avatar}" alt="${s.name}" class="rounded-circle me-3" style="width: 36px; height: 36px; object-fit: cover;">
                                             <div>
                                                 <div class="fs-6">${s.name}</div>
-                                                <div class="fs-7 text-secondary-custom fw-normal">@${s.leetcode_username}</div>
+                                                <div class="fs-7 text-secondary-custom fw-normal">
+                                                    @${s.leetcode_username} | <span class="badge bg-secondary bg-opacity-10 text-dark fs-8">${s.department || 'Unknown'} - ${s.academic_year || '0'} Yr</span>
+                                                </div>
                                             </div>
                                         </a>
                                     </td>
-                                    <td class="text-center fw-extrabold fs-6 text-easy">${s.total_solved}</td>
-                                    <td class="text-center">
-                                        ${s.today_solves > 0 ? `<span class="badge bg-warning text-dark font-monospace fw-bold">+${s.today_solves}</span>` : `<span class="text-secondary-custom">-</span>`}
+                                    <td class="text-center fw-extrabold fs-6 text-easy align-middle">${s.total_solved}</td>
+                                    <td class="text-center align-middle">
+                                        <div class="d-flex align-items-center justify-content-center gap-1 fs-7">
+                                            <span class="badge bg-easy bg-opacity-15 text-easy fw-semibold px-2 py-1">E: ${s.easy_solved}</span>
+                                            <span class="badge bg-medium bg-opacity-15 text-medium fw-semibold px-2 py-1">M: ${s.medium_solved}</span>
+                                            <span class="badge bg-hard bg-opacity-15 text-hard fw-semibold px-2 py-1">H: ${s.hard_solved}</span>
+                                        </div>
                                     </td>
-                                    <td class="text-center font-monospace fw-bold fs-6">
-                                        ${s.current_streak > 0 ? `${s.current_streak}🔥` : `<span class="text-secondary-custom">0</span>`}
+                                    <td class="text-center align-middle">
+                                        <div class="d-flex flex-column align-items-center justify-content-center">
+                                            ${s.today_solves > 0 ? `<span class="badge bg-warning text-dark font-monospace fw-bold mb-1">+${s.today_solves} today</span>` : ``}
+                                            <span class="font-monospace fs-7 text-secondary-custom fw-semibold">${s.current_streak > 0 ? `${s.current_streak}🔥 streak` : '0🔥'}</span>
+                                        </div>
                                     </td>
                                 `;
                                 solversBody.appendChild(tr);

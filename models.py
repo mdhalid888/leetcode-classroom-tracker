@@ -86,7 +86,7 @@ class Submission(db.Model):
     title = db.Column(db.String(255), nullable=False)
     title_slug = db.Column(db.String(255), nullable=False)
     difficulty = db.Column(db.String(20), nullable=False)
-    timestamp = db.Column(db.DateTime, nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, index=True)
 
     def to_dict(self):
         return {

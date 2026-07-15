@@ -1173,7 +1173,16 @@ def api_dashboard():
             Submission.timestamp <= ist_end
         ).distinct().count()
     
-    top_students = Student.query.filter_by(department=class_dept, academic_year=class_year, is_active=True).order_by(Student.total_solved.desc()).limit(5).all()
+    top_query = Student.query.filter_by(is_active=True)
+    if class_dept != 'ALL':
+        top_query = top_query.filter_by(department=class_dept)
+    if class_year != 'ALL':
+        try:
+            top_query = top_query.filter_by(academic_year=int(class_year))
+        except ValueError:
+            pass
+            
+    top_students = top_query.order_by(Student.total_solved.desc()).limit(5).all()
     top_students_list = []
     for s in top_students:
         s_dict = s.to_dict()
@@ -1520,17 +1529,23 @@ def api_admin_dashboard():
     last_updated_student = Student.query.order_by(Student.last_updated.desc()).first()
     last_updated = last_updated_student.last_updated.isoformat() if (last_updated_student and last_updated_student.last_updated) else "Never"
     
-    upload_dir = os.path.join(app.root_path, 'uploads')
+    # Query database for parsed classes and counts instead of ephemeral disk files
+    classes_in_db = db.session.query(
+        Student.department, 
+        Student.academic_year, 
+        db.func.count(Student.id)
+    ).filter_by(is_active=True).group_by(Student.department, Student.academic_year).all()
+    
     excel_files = []
-    if os.path.exists(upload_dir):
-        for f in os.listdir(upload_dir):
-            if f.endswith('.xlsx') and not f.startswith('~$'):
-                path = os.path.join(upload_dir, f)
-                excel_files.append({
-                    'name': f,
-                    'size': f"{round(os.path.getsize(path) / 1024, 1)} KB"
-                })
-                
+    for dept, yr, count in classes_in_db:
+        if dept:
+            excel_files.append({
+                'name': f"{dept}_{yr}.xlsx",
+                'dept': dept,
+                'year': yr if yr is not None else 'Unknown',
+                'size': f"{count} Students"
+            })
+            
     curr_status = update_status()
     
     return jsonify({
@@ -1554,16 +1569,27 @@ def api_admin_upload_file():
         return jsonify({'status': 'error', 'message': 'No file selected.'}), 400
         
     if file and file.filename.endswith('.xlsx'):
+        replace_db = request.form.get('replace', 'false') == 'true'
         from werkzeug.utils import secure_filename
         filename = secure_filename(file.filename)
         upload_dir = os.path.join(app.root_path, 'uploads')
         os.makedirs(upload_dir, exist_ok=True)
+        
+        if replace_db:
+            # Clear all existing files in the uploads folder
+            for f in os.listdir(upload_dir):
+                if f.endswith('.xlsx'):
+                    try:
+                        os.remove(os.path.join(upload_dir, f))
+                    except:
+                        pass
+                        
         file_path = os.path.join(upload_dir, filename)
         file.save(file_path)
         
         from seed_db import seed_classmates
         try:
-            seed_classmates()
+            seed_classmates(replace=replace_db)
             return jsonify({'status': 'success', 'message': f"File '{filename}' uploaded and database successfully synchronized."})
         except Exception as e:
             return jsonify({'status': 'error', 'message': f"Error parsing uploaded Excel roster: {e}"}), 500
@@ -1575,20 +1601,37 @@ def api_admin_delete_file(filename):
     if not verify_admin_auth():
         return jsonify({'status': 'error', 'message': 'Unauthorized admin access.'}), 401
         
-    from werkzeug.utils import secure_filename
-    safe_filename = secure_filename(filename)
-    file_path = os.path.join(app.root_path, 'uploads', safe_filename)
-    
-    if os.path.exists(file_path):
-        try:
+    dept = None
+    year = None
+    name_without_ext = filename.replace('.xlsx', '')
+    if '_' in name_without_ext:
+        parts = name_without_ext.split('_')
+        if len(parts) == 2:
+            dept = parts[0].strip().upper()
+            try:
+                year = int(parts[1].strip())
+            except ValueError:
+                pass
+                
+    try:
+        deleted_count = 0
+        if dept and year is not None:
+            students = Student.query.filter_by(department=dept, academic_year=year).all()
+            for s in students:
+                db.session.delete(s)
+            deleted_count = len(students)
+            db.session.commit()
+            
+        from werkzeug.utils import secure_filename
+        safe_filename = secure_filename(filename)
+        file_path = os.path.join(app.root_path, 'uploads', safe_filename)
+        if os.path.exists(file_path):
             os.remove(file_path)
-            from seed_db import seed_classmates
-            seed_classmates()
-            return jsonify({'status': 'success', 'message': f"File '{safe_filename}' deleted and active database synchronized."})
-        except Exception as e:
-            return jsonify({'status': 'error', 'message': f"Error deleting file: {e}"}), 500
-    else:
-        return jsonify({'status': 'error', 'message': 'Excel roster file not found.'}), 404
+            
+        return jsonify({'status': 'success', 'message': f"Deleted class '{dept} - Year {year}' ({deleted_count} students) from database."})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': f"Error deleting class: {e}"}), 500
 
 @app.route('/api/admin/scan-uploads', methods=['POST'])
 def api_admin_scan_uploads():

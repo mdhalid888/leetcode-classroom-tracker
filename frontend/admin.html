@@ -74,31 +74,30 @@
                     </div>
                 </div>
 
-                <!-- Class Database Scanner Card -->
+                <!-- Class Database Roster Card -->
                 <div class="card-glass p-4">
-                    <h3 class="fs-4 mb-3"><i class="bi bi-folder-fill text-warning me-2"></i>Class Database Scanner</h3>
+                    <h3 class="fs-4 mb-3"><i class="bi bi-folder-fill text-warning me-2"></i>Class Database Roster</h3>
                     <p class="text-secondary-custom fs-7 mb-4">
-                        Scan your <code>uploads/</code> directory for class student Excel files (named like <code>IT_4.xlsx</code> or <code>CSE_3.xlsx</code>). 
-                        Syncing will automatically update or import classroom rosters.
+                        All active classroom rosters parsed and currently stored in the database. Deleting a class removes its roster permanently from the application.
                     </p>
                     
                     <div class="mb-4">
-                        <span class="fs-7 fw-semibold text-secondary-custom d-block mb-2">Detected Class Files:</span>
+                        <span class="fs-7 fw-semibold text-secondary-custom d-block mb-2">Active Classes in Database:</span>
                         <div id="detectedFilesContainer">
                             <div class="text-center py-3 border border-secondary border-opacity-10 rounded text-secondary-custom fs-7">
-                                <div class="spinner-border spinner-border-sm text-easy me-2" role="status"></div> Loading files...
+                                <div class="spinner-border spinner-border-sm text-easy me-2" role="status"></div> Loading classes...
                             </div>
                         </div>
                     </div>
                     
-                    <button id="scanSyncBtn" class="btn btn-easy text-dark fw-bold rounded-pill px-4">
-                        <i class="bi bi-search me-1"></i> Scan & Sync Class Databases
+                    <button id="scanSyncBtn" class="btn btn-sm btn-outline-easy rounded-pill px-4 fs-7">
+                        <i class="bi bi-search me-1"></i> Force Scan Ephemeral Files
                     </button>
                 </div>
-
+ 
                 <!-- Upload Class Database Card -->
                 <div class="card-glass p-4 mt-4">
-                    <h3 class="fs-4 mb-3"><i class="bi bi-cloud-upload-fill text-easy me-2"></i>Upload Class List</h3>
+                    <h3 class="fs-4 mb-3"><i class="bi bi-class-upload text-easy me-2"></i>Upload Class List</h3>
                     <p class="text-secondary-custom fs-7 mb-4">
                         Upload a class student Excel file (e.g. <code>IT_4.xlsx</code>). The file must contain columns like: <code>Name</code>, <code>Register Number</code>, and <code>LeetCode Username</code>.
                     </p>
@@ -106,6 +105,25 @@
                         <div class="mb-3">
                             <input class="form-control login-input fs-7" type="file" id="classFile" accept=".xlsx" required>
                         </div>
+                        
+                        <div class="mb-3 bg-dark bg-opacity-10 p-3 rounded-3 border border-secondary border-opacity-10">
+                            <label class="form-label fw-bold text-secondary-custom fs-7 mb-2">Import Mode</label>
+                            <div class="d-flex flex-wrap gap-4 fs-7">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="uploadMode" id="modeMerge" value="merge" checked>
+                                    <label class="form-check-label fw-semibold text-secondary-custom" for="modeMerge">
+                                        <i class="bi bi-shuffle text-info me-1"></i> Merge Roster (Add/Update)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="uploadMode" id="modeOverwrite" value="overwrite">
+                                    <label class="form-check-label fw-bold text-danger" for="modeOverwrite">
+                                        <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i> Overwrite Database (Clear & Replace)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <button type="submit" id="uploadBtn" class="btn btn-easy text-dark fw-bold rounded-pill px-4">
                             <i class="bi bi-upload me-1"></i> Upload & Sync
                         </button>
@@ -273,7 +291,7 @@
                         } else {
                             filesContainer.innerHTML = `
                                 <div class="text-center py-3 border border-secondary border-opacity-10 rounded text-secondary-custom fs-7">
-                                    <i class="bi bi-info-circle me-1"></i> No Excel sheets found in uploads/ folder.
+                                    <i class="bi bi-info-circle me-1"></i> No active class rosters found in the database.
                                 </div>
                             `;
                         }
@@ -316,11 +334,21 @@
             // Upload Form
             uploadForm.addEventListener("submit", async (e) => {
                 e.preventDefault();
+                
+                const mode = document.querySelector('input[name="uploadMode"]:checked').value;
+                if (mode === "overwrite") {
+                    const confirmAction = confirm("WARNING: Overwriting the database will clear all student data, submissions, snapshots, and reports permanently. Are you absolutely sure you want to proceed?");
+                    if (!confirmAction) {
+                        return;
+                    }
+                }
+                
                 uploadBtn.disabled = true;
                 
                 const fileInput = document.getElementById("classFile");
                 const formData = new FormData();
                 formData.append("class_file", fileInput.files[0]);
+                formData.append("replace", mode === "overwrite" ? "true" : "false");
                 
                 try {
                     const response = await fetch(`${API_BASE_URL}/api/admin/upload-file`, {
@@ -335,6 +363,8 @@
                     if (response.ok && data.status === "success") {
                         showToast(data.message, "success");
                         fileInput.value = "";
+                        // Reset to merge option
+                        document.getElementById("modeMerge").checked = true;
                         loadAdminData();
                     } else {
                         showToast(data.message || "Upload failed.", "error");
