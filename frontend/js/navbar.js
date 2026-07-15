@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const getPageUrl = (page) => {
         return isLocal ? page : page.replace('.html', '');
     };
+    window.getPageUrl = getPageUrl;
     
     // If a user tries to access the old login page, redirect them to the dashboard
     if (currentPath.includes("login.html") || currentPath === "/login") {

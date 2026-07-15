@@ -174,7 +174,8 @@
                                 tdName.style.position = "sticky";
                                 tdName.style.zIndex = "5";
                                 tdName.className = "fw-bold border-end shadow-sm attendance-name-cell";
-                                tdName.innerHTML = `<a href="student.html?id=${record.student.id}" class="text-decoration-none text-reset">${record.student.name}</a>`;
+                                const getPageUrl = window.getPageUrl || ((p) => p);
+                                tdName.innerHTML = `<a href="${getPageUrl('student.html')}?id=${record.student.id}" class="text-decoration-none text-reset">${record.student.name}</a>`;
                                 tr.appendChild(tdName);
                                 
                                 // Grid cells

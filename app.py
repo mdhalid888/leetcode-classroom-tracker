@@ -1090,13 +1090,29 @@ def api_login():
         'student': student.to_dict()
     })
 
+ADMIN_CREDENTIALS = {
+    'test456@gmail.com': 'admin456@',
+    # HODs
+    'nitithod@nehrucolleges.com': 'itHod123$',
+    'nitcsehod@nehrucolleges.com': 'cseHod123$',
+    'nitccehod@nehrucolleges.com': 'cceHod123$',
+    'nitaimlhod@nehrucolleges.com': 'aimlHod123$',
+    'nitcshod@nehrucolleges.com': 'csHod123$',
+    # Placements
+    'nitplacements@nehrucolleges.com': 'nitplacements23$',
+    'nitarunpatrick@nehrucolleges.com': 'nitArun123$',
+    'nitjasonp@nehrucolleges.com': 'nitJason123$',
+    'nititiv@nehrucolleges.com': 'nitIT123$',
+    'nitcseiv@nehrucolleges.com': 'nitCSE123$'
+}
+
 @app.route('/api/admin/login', methods=['POST'])
 def api_admin_login():
     data = request.json or {}
     email = str(data.get('email', '')).strip()
     password = str(data.get('password', '')).strip()
     
-    if email == 'test456@gmail.com' and password == 'admin456@':
+    if email in ADMIN_CREDENTIALS and ADMIN_CREDENTIALS[email] == password:
         return jsonify({
             'status': 'success',
             'admin_token': 'admin456@'

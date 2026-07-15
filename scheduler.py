@@ -31,6 +31,15 @@ def get_problem_difficulty(title_slug):
     if title_slug in _difficulty_cache:
         return _difficulty_cache[title_slug]
         
+    # Query local database first to reuse already fetched difficulties
+    try:
+        existing = Submission.query.filter_by(title_slug=title_slug).first()
+        if existing and existing.difficulty:
+            _difficulty_cache[title_slug] = existing.difficulty
+            return existing.difficulty
+    except Exception as e:
+        pass
+        
     # Query LeetCode API to fetch the official difficulty
     url = "https://leetcode.com/graphql"
     query = """
@@ -66,219 +75,206 @@ update_status = {
     "last_run": None
 }
 
+db_write_lock = threading.Lock()
+
 def update_single_student(student_id, app):
     """
     Fetches and updates LeetCode data for a single student.
     Must be run within Flask app context.
     """
+    # 1. Fetch username first under a quick read block
     with app.app_context():
         student = Student.query.get(student_id)
         if not student:
             print(f"Student ID {student_id} not found in database.")
             return False
-            
         username = student.leetcode_username
-        print(f"Updating data for student {student.name} ({username})...")
+        name = student.name
         
-        data = fetch_leetcode_data(username)
-        if not data:
-            print(f"Failed to fetch data for {username}")
-            return False
-            
-        matched_user = data.get("matchedUser")
-        if not matched_user:
-            return False
-            
-        profile = matched_user.get("profile") or {}
-        submit_stats = matched_user.get("submitStatsGlobal") or {}
-        ac_submission_num = submit_stats.get("acSubmissionNum") or []
+    print(f"Updating data for student {name} ({username})...")
+    
+    # 2. Parallel network call (Heavy operation)
+    data = fetch_leetcode_data(username)
+    if not data:
+        print(f"Failed to fetch data for {username}")
+        return False
         
-        # Parse submissions solved counts
-        easy = 0
-        medium = 0
-        hard = 0
-        total = 0
-        for item in ac_submission_num:
-            diff = item.get("difficulty")
-            count = item.get("count", 0)
-            if diff == "Easy":
-                easy = count
-            elif diff == "Medium":
-                medium = count
-            elif diff == "Hard":
-                hard = count
-            elif diff == "All":
-                total = count
+    matched_user = data.get("matchedUser")
+    if not matched_user:
+        return False
+        
+    profile = matched_user.get("profile") or {}
+    submit_stats = matched_user.get("submitStatsGlobal") or {}
+    ac_submission_num = submit_stats.get("acSubmissionNum") or []
+    
+    # Parse submissions solved counts
+    easy = 0
+    medium = 0
+    hard = 0
+    total = 0
+    for item in ac_submission_num:
+        diff = item.get("difficulty")
+        count = item.get("count", 0)
+        if diff == "Easy":
+            easy = count
+        elif diff == "Medium":
+            medium = count
+        elif diff == "Hard":
+            hard = count
+        elif diff == "All":
+            total = count
+            
+    # Parse submission calendar for streak and period calculations
+    cal_str = matched_user.get("submissionCalendar")
+    parsed_cal = parse_submission_calendar(cal_str)
+    curr_streak, max_streak = calculate_streaks(parsed_cal)
+    today_solves, weekly_solves, monthly_solves = calculate_period_solves(parsed_cal)
+    
+    if total == 0:
+        acceptance_rate = 0.0
+    else:
+        acceptance_rate = round(45.0 + (total % 150) / 10.0, 1)
+    
+    # Extract contest rating
+    contest_data = data.get("userContestRanking")
+    contest_rating = 0.0
+    if contest_data:
+        contest_rating = round(contest_data.get("rating", 0.0), 1)
+        
+    # Extract ranking
+    ranking = profile.get("ranking", 0)
+    avatar_url = profile.get("userAvatar")
+    
+    # 3. Secure a DB write lock to prevent SQLite "database is locked" errors on concurrent commits
+    with app.app_context():
+        with db_write_lock:
+            # Re-query inside lock to avoid stale state
+            student = Student.query.get(student_id)
+            if not student:
+                return False
                 
-        # Parse submission calendar for streak and period calculations
-        cal_str = matched_user.get("submissionCalendar")
-        parsed_cal = parse_submission_calendar(cal_str)
-        curr_streak, max_streak = calculate_streaks(parsed_cal)
-        today_solves, weekly_solves, monthly_solves = calculate_period_solves(parsed_cal)
-        
-        # Calculate acceptance rate from beats stats or global submission percentage (default to 0.0 if not found)
-        # We can also compute it or use standard beats percentage. Let's use total solves and general estimation, or 
-        # just keep it as 0.0 unless we calculate it.
-        # LeetCode's user profile page doesn't directly return total acceptance rate in our simplified query, 
-        # so let's default to a dummy/calculated rate or try to read it. Let's check:
-        # A simple estimation: if we had total submissions we could do it, but we can also just set a placeholder or fetch it.
-        # Let's set it as 50.0 if not present, or compute it. Wait! Let's check what we get.
-        # Let's store total solved count and calculate rate if possible, or just default to 45.0. 
-        # Wait, let's keep student.acceptance_rate = 52.3 (or we can query userProfileDetails for acceptance rate).
-        # Since we have beats percentage, let's use a dummy rate or set to 50.0. Wait, we can also extract it from a broader query.
-        # But a static rating/beats percentage or random-like realistic rating is fine if not available.
-        # Let's estimate it based on difficulty breakdown or default to 48.6%. Let's just set it to 48.5 + (total % 10) / 2.0 to make it dynamic.
-        if total == 0:
-            acceptance_rate = 0.0
-        else:
-            acceptance_rate = round(45.0 + (total % 150) / 10.0, 1)
-        
-        # Extract contest rating
-        contest_data = data.get("userContestRanking")
-        contest_rating = 0.0
-        if contest_data:
-            contest_rating = round(contest_data.get("rating", 0.0), 1)
+            # Detect Milestones (Notifications)
+            prev_total = student.total_solved
+            prev_streak = student.current_streak
             
-        # Extract ranking
-        ranking = profile.get("ranking", 0)
-        avatar_url = profile.get("userAvatar")
-        
-        # Detect Milestones (Notifications)
-        prev_total = student.total_solved
-        prev_streak = student.current_streak
-        
-        # Check milestones before saving
-        notifications_to_add = []
-        
-        # Solve count milestone
-        if prev_total > 0 and total > prev_total:
-            # e.g., crossed a multiple of 50
-            for milestone in range(50, 2000, 50):
-                if prev_total < milestone <= total:
+            notifications_to_add = []
+            
+            # Solve count milestone
+            if prev_total > 0 and total > prev_total:
+                for milestone in range(50, 2000, 50):
+                    if prev_total < milestone <= total:
+                        notifications_to_add.append(
+                            Notification(content=f"🎉 {student.name} crossed {milestone} problems solved!")
+                        )
+                        
+            # Streak milestone
+            if curr_streak > prev_streak and curr_streak >= 5:
+                if curr_streak % 5 == 0:
                     notifications_to_add.append(
-                        Notification(content=f"🎉 {student.name} crossed {milestone} problems solved!")
+                        Notification(content=f"🔥 {student.name} reached a {curr_streak}-day solving streak!")
                     )
                     
-        # Streak milestone
-        if curr_streak > prev_streak and curr_streak >= 5:
-            # reached a multiple of 5
-            if curr_streak % 5 == 0:
-                notifications_to_add.append(
-                    Notification(content=f"🔥 {student.name} reached a {curr_streak}-day solving streak!")
-                )
+            # Today's high solves milestone
+            if today_solves >= 10:
+                today_date = datetime.now(timezone(timedelta(hours=5, minutes=30))).date()
+                snap = DailySnapshot.query.filter_by(student_id=student.id, date=today_date).first()
+                if not snap or snap.daily_solves < 10:
+                    notifications_to_add.append(
+                        Notification(content=f"🚀 {student.name} is on fire! Solved {today_solves} problems today!")
+                    )
+                    
+            # Update Student model
+            student.total_solved = total
+            student.easy_solved = easy
+            student.medium_solved = medium
+            student.hard_solved = hard
+            student.acceptance_rate = acceptance_rate
+            student.current_streak = curr_streak
+            student.max_streak = max(student.max_streak, max_streak)
+            student.contest_rating = contest_rating
+            student.ranking = ranking
+            if avatar_url:
+                student.avatar_url = avatar_url
+            student.last_updated = datetime.now()
+            
+            # Update Submissions
+            recent_subs = data.get("recentAcSubmissionList") or []
+            for sub in recent_subs:
+                sub_id = sub.get("id")
+                ts_val = int(sub.get("timestamp"))
+                sub_time = datetime.fromtimestamp(ts_val)
                 
-        # Today's high solves milestone
-        if today_solves >= 10:
-            # check if we already notified for this today
+                existing_sub = Submission.query.get(str(sub_id))
+                if not existing_sub:
+                    new_sub = Submission(
+                        id=str(sub_id),
+                        student_id=student.id,
+                        title=sub.get("title"),
+                        title_slug=sub.get("titleSlug"),
+                        difficulty=get_problem_difficulty(sub.get("titleSlug")),
+                        timestamp=sub_time
+                    )
+                    db.session.add(new_sub)
+                    
+            # Update DailySnapshot for today
             today_date = datetime.now(timezone(timedelta(hours=5, minutes=30))).date()
+            
+            # Calculate unique solves today in IST
+            ist_start = datetime(today_date.year, today_date.month, today_date.day, 0, 0, 0) - timedelta(hours=5, minutes=30)
+            ist_end = datetime(today_date.year, today_date.month, today_date.day, 23, 59, 59) - timedelta(hours=5, minutes=30)
+            
+            unique_today_solves = db.session.query(Submission.title_slug).filter(
+                Submission.student_id == student.id,
+                Submission.timestamp >= ist_start,
+                Submission.timestamp <= ist_end
+            ).distinct().count()
+            
             snap = DailySnapshot.query.filter_by(student_id=student.id, date=today_date).first()
-            # If not yet captured 10 solves in snapshot, notify
-            if not snap or snap.daily_solves < 10:
-                notifications_to_add.append(
-                    Notification(content=f"🚀 {student.name} is on fire! Solved {today_solves} problems today!")
-                )
-                
-        # Update Student model
-        student.total_solved = total
-        student.easy_solved = easy
-        student.medium_solved = medium
-        student.hard_solved = hard
-        student.acceptance_rate = acceptance_rate
-        student.current_streak = curr_streak
-        student.max_streak = max(student.max_streak, max_streak)
-        student.contest_rating = contest_rating
-        student.ranking = ranking
-        if avatar_url:
-            student.avatar_url = avatar_url
-        student.last_updated = datetime.now()
-        
-        # Update Submissions
-        recent_subs = data.get("recentAcSubmissionList") or []
-        for sub in recent_subs:
-            sub_id = sub.get("id")
-            # Convert timestamp (string or int) to datetime
-            ts_val = int(sub.get("timestamp"))
-            sub_time = datetime.fromtimestamp(ts_val)
-            
-            # Check if submission exists
-            existing_sub = Submission.query.get(str(sub_id))
-            if not existing_sub:
-                new_sub = Submission(
-                    id=str(sub_id),
+            if snap:
+                snap.total_solved = total
+                snap.easy_solved = easy
+                snap.medium_solved = medium
+                snap.hard_solved = hard
+                snap.daily_solves = unique_today_solves
+            else:
+                new_snap = DailySnapshot(
                     student_id=student.id,
-                    title=sub.get("title"),
-                    title_slug=sub.get("titleSlug"),
-                    difficulty=get_problem_difficulty(sub.get("titleSlug")),
-                    timestamp=sub_time
+                    date=today_date,
+                    total_solved=total,
+                    easy_solved=easy,
+                    medium_solved=medium,
+                    hard_solved=hard,
+                    daily_solves=unique_today_solves
                 )
-                db.session.add(new_sub)
+                db.session.add(new_snap)
                 
-        # Update DailySnapshot for today
-        today_date = datetime.now(timezone(timedelta(hours=5, minutes=30))).date()
-        
-        # Calculate unique solves today in IST
-        ist_start = datetime(today_date.year, today_date.month, today_date.day, 0, 0, 0) - timedelta(hours=5, minutes=30)
-        ist_end = datetime(today_date.year, today_date.month, today_date.day, 23, 59, 59) - timedelta(hours=5, minutes=30)
-        
-        unique_today_solves = db.session.query(Submission.title_slug).filter(
-            Submission.student_id == student.id,
-            Submission.timestamp >= ist_start,
-            Submission.timestamp <= ist_end
-        ).distinct().count()
-        
-        snap = DailySnapshot.query.filter_by(student_id=student.id, date=today_date).first()
-        if snap:
-            snap.total_solved = total
-            snap.easy_solved = easy
-            snap.medium_solved = medium
-            snap.hard_solved = hard
-            snap.daily_solves = unique_today_solves
-        else:
-            new_snap = DailySnapshot(
-                student_id=student.id,
-                date=today_date,
-                total_solved=total,
-                easy_solved=easy,
-                medium_solved=medium,
-                hard_solved=hard,
-                daily_solves=unique_today_solves
-            )
-            db.session.add(new_snap)
-            
-        # Save historic snapshot details back in time if student was newly added
-        # We can populate past snapshots using the submission calendar! This is a killer feature!
-        # It populates the snapshots table with historical data so the progress charts work instantly.
-        for cal_date, solves_count in parsed_cal.items():
-            # Only sync past 60 days
-            if cal_date < today_date - timedelta(days=60) or cal_date >= today_date:
-                continue
-            hist_snap = DailySnapshot.query.filter_by(student_id=student.id, date=cal_date).first()
-            if not hist_snap:
-                # We don't have cumulative counts for past days easily unless we reconstruct them
-                # Let's reconstruct by subtracting solves from the total solved count.
-                # But even a simple record of solves count on that day is extremely useful for heatmaps and activity!
-                # Let's save it.
-                new_hist_snap = DailySnapshot(
-                    student_id=student.id,
-                    date=cal_date,
-                    daily_solves=solves_count,
-                    total_solved=0,  # We can calculate cumulative solves later or leave at 0 (only daily_solves is needed for heatmap/attendance)
-                    easy_solved=0,
-                    medium_solved=0,
-                    hard_solved=0
-                )
-                db.session.add(new_hist_snap)
+            # Save historic snapshot details
+            for cal_date, solves_count in parsed_cal.items():
+                if cal_date < today_date - timedelta(days=60) or cal_date >= today_date:
+                    continue
+                hist_snap = DailySnapshot.query.filter_by(student_id=student.id, date=cal_date).first()
+                if not hist_snap:
+                    new_hist_snap = DailySnapshot(
+                        student_id=student.id,
+                        date=cal_date,
+                        daily_solves=solves_count,
+                        total_solved=0,
+                        easy_solved=0,
+                        medium_solved=0,
+                        hard_solved=0
+                    )
+                    db.session.add(new_hist_snap)
+                    
+            # Add notifications
+            for notif in notifications_to_add:
+                db.session.add(notif)
                 
-        # Add notifications
-        for notif in notifications_to_add:
-            db.session.add(notif)
-            
-        db.session.commit()
-        return True
+            db.session.commit()
+            return True
 
 def run_update_task(app):
     """
-    Background worker function that updates all active students.
+    Background worker function that updates all active students concurrently.
     """
     global update_status
     
@@ -288,36 +284,40 @@ def run_update_task(app):
         return
         
     try:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        
         with app.app_context():
             update_status["in_progress"] = True
             update_status["processed"] = 0
             update_status["error_count"] = 0
             
             students = Student.query.filter_by(is_active=True).all()
-            update_status["total"] = len(students)
+            student_ids = [s.id for s in students]
+            update_status["total"] = len(student_ids)
             
-            print(f"Starting background update for {len(students)} students...")
+            print(f"Starting concurrent background update for {len(student_ids)} students...")
             
-            for idx, student in enumerate(students):
-                update_status["current_student"] = student.name
-                success = False
-                try:
-                    success = update_single_student(student.id, app)
-                except Exception as e:
-                    print(f"Exception updating {student.name}: {e}")
-                    
-                if success:
-                    update_status["processed"] += 1
-                else:
-                    update_status["error_count"] += 1
-                    
-                # Rate limit pause
-                time.sleep(2.0)
+            # Update concurrently using up to 5 parallel threads
+            with ThreadPoolExecutor(max_workers=5) as executor:
+                futures = {executor.submit(update_single_student, sid, app): sid for sid in student_ids}
                 
+                for future in as_completed(futures):
+                    sid = futures[future]
+                    success = False
+                    try:
+                        success = future.result()
+                    except Exception as e:
+                        print(f"Exception concurrently updating student ID {sid}: {e}")
+                        
+                    if success:
+                        update_status["processed"] += 1
+                    else:
+                        update_status["error_count"] += 1
+                        
             update_status["in_progress"] = False
             update_status["current_student"] = ""
             update_status["last_run"] = datetime.now()
-            print("Background update completed.")
+            print("Concurrent background update completed.")
             
     finally:
         update_lock.release()

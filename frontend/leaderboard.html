@@ -173,7 +173,7 @@
                                 tr.innerHTML = `
                                     <td class="fw-bold fs-5 text-secondary-custom">${rankBadge}</td>
                                     <td>
-                                        <a href="student.html?id=${s.id}" class="fw-bold text-decoration-none text-reset d-flex align-items-center">
+                                        <a href="${(window.getPageUrl || ((p) => p))('student.html')}?id=${s.id}" class="fw-bold text-decoration-none text-reset d-flex align-items-center">
                                             <img src="${avatar}" alt="${s.name}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
                                             <div>
                                                 <div class="fs-6">${s.name}</div>
