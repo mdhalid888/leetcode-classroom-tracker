@@ -78,21 +78,26 @@
     <script src="js/config.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
+            const isLocal = window.location.hostname === 'localhost' || 
+                            window.location.hostname === '127.0.0.1' || 
+                            window.location.protocol === 'file:';
+            
+            const getPageUrl = (page) => {
+                return isLocal ? page : page.replace('.html', '');
+            };
+
             const adminLink = document.getElementById("adminPortalLink");
             if (adminLink) {
-                const isLocal = window.location.hostname === 'localhost' || 
-                                window.location.hostname === '127.0.0.1' || 
-                                window.location.protocol === 'file:';
-                adminLink.href = isLocal ? "admin_login.html" : "admin_login";
+                adminLink.href = getPageUrl("admin_login.html");
             }
 
             // Redirect if already logged in
             if (localStorage.getItem("current_student")) {
-                window.location.href = "index.html";
+                window.location.href = getPageUrl("index.html");
                 return;
             }
             if (localStorage.getItem("admin_token")) {
-                window.location.href = "admin.html";
+                window.location.href = getPageUrl("admin.html");
                 return;
             }
             
@@ -119,7 +124,7 @@
                     
                     if (response.ok && data.status === "success") {
                         localStorage.setItem("current_student", JSON.stringify(data.student));
-                        window.location.href = "index.html";
+                        window.location.href = getPageUrl("index.html");
                     } else {
                         errorMsg.textContent = data.message || "Login failed.";
                         errorContainer.style.display = "block";

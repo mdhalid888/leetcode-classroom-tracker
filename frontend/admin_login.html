@@ -88,16 +88,21 @@
     <script src="js/config.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
+            const isLocal = window.location.hostname === 'localhost' || 
+                            window.location.hostname === '127.0.0.1' || 
+                            window.location.protocol === 'file:';
+            
+            const getPageUrl = (page) => {
+                return isLocal ? page : page.replace('.html', '');
+            };
+
             const studentLink = document.getElementById("studentPortalLink");
             if (studentLink) {
-                const isLocal = window.location.hostname === 'localhost' || 
-                                window.location.hostname === '127.0.0.1' || 
-                                window.location.protocol === 'file:';
-                studentLink.href = isLocal ? "login.html" : "login";
+                studentLink.href = getPageUrl("login.html");
             }
 
             if (localStorage.getItem("admin_token")) {
-                window.location.href = "admin.html";
+                window.location.href = getPageUrl("admin.html");
                 return;
             }
             
@@ -125,7 +130,7 @@
                     
                     if (response.ok && data.status === "success") {
                         localStorage.setItem("admin_token", data.admin_token);
-                        window.location.href = "admin.html";
+                        window.location.href = getPageUrl("admin.html");
                     } else {
                         errorMsg.textContent = data.message || "Invalid credentials.";
                         errorContainer.style.display = "block";
