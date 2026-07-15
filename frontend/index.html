@@ -32,6 +32,38 @@
 
         <!-- Dashboard Content (hidden until loaded) -->
         <div id="dashboard-content" style="display: none;">
+            <!-- Filter Section -->
+            <div class="card-glass p-3 mb-4 animate-fade-in">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-4">
+                        <label for="deptSelect" class="form-label fw-semibold text-secondary-custom fs-7 mb-1">Filter Department</label>
+                        <select id="deptSelect" class="form-select bg-dark bg-opacity-10 text-dark border-secondary border-opacity-20 rounded-pill px-3">
+                            <option value="ALL">All Departments</option>
+                            <option value="IT">Information Technology (IT)</option>
+                            <option value="CSE">Computer Science & Engineering (CSE)</option>
+                            <option value="CCE">Computer Science & Communication (CCE)</option>
+                            <option value="AIML">Artificial Intelligence & Machine Learning (AIML)</option>
+                            <option value="CS">Computer Science (CS)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="yearSelect" class="form-label fw-semibold text-secondary-custom fs-7 mb-1">Filter Academic Year</label>
+                        <select id="yearSelect" class="form-select bg-dark bg-opacity-10 text-dark border-secondary border-opacity-20 rounded-pill px-3">
+                            <option value="ALL">All Years</option>
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end h-100 mt-md-4">
+                        <button id="applyFiltersBtn" class="btn btn-easy text-dark fw-bold rounded-pill w-100 py-2">
+                            Apply Filters <i class="bi bi-funnel-fill ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="row g-4 mb-4 animate-fade-in">
                 <!-- Stats Cards -->
                 <div class="col-md-4">
@@ -179,167 +211,205 @@
     <script src="js/config.js"></script>
     <script src="js/navbar.js"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", async () => {
+        document.addEventListener("DOMContentLoaded", () => {
             const studentData = localStorage.getItem("current_student");
             const student = studentData ? JSON.parse(studentData) : null;
             const studentId = student ? student.id : '';
             
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/dashboard?student_id=${studentId}`);
-                const data = await response.json();
-                
-                if (response.ok && data.status === "success") {
-                    // Hide loader and show content
-                    document.getElementById("loader").style.display = "none";
-                    document.getElementById("dashboard-content").style.display = "block";
-                    
-                    // Render aggregates
-                    const dept = data.student.department;
-                    const year = data.student.academic_year;
-                    let yearSuffix = "th";
-                    if (year === 2) yearSuffix = "nd";
-                    else if (year === 3) yearSuffix = "rd";
-                    
-                    document.getElementById("classLabel").textContent = `${dept} - ${year}${yearSuffix} Yr`;
-                    document.getElementById("todaySolvesVal").textContent = data.today_solves;
-                    document.getElementById("totalSolvesVal").textContent = data.total_solves;
-                    
-                    // Render Top Solvers
-                    const solversBody = document.getElementById("topSolversBody");
-                    solversBody.innerHTML = "";
-                    if (data.top_students && data.top_students.length > 0) {
-                        data.top_students.forEach((s, idx) => {
-                            let medal = `#${idx + 1}`;
-                            if (idx === 0) medal = "🥇";
-                            else if (idx === 1) medal = "🥈";
-                            else if (idx === 2) medal = "🥉";
-                            
-                            const avatar = s.avatar_url || 'https://assets.leetcode.com/users/default_avatar.png';
-                            
-                            const tr = document.createElement("tr");
-                            tr.innerHTML = `
-                                <td class="fw-bold fs-5 text-secondary-custom">${medal}</td>
-                                <td>
-                                    <a href="${(window.getPageUrl || ((p) => p))('student.html')}?id=${s.id}" class="fw-bold text-decoration-none text-reset d-flex align-items-center">
-                                        <img src="${avatar}" alt="${s.name}" class="rounded-circle me-3" style="width: 32px; height: 32px; object-fit: cover;">
-                                        <div>
-                                            <div class="fs-6">${s.name}</div>
-                                            <div class="fs-7 text-secondary-custom fw-normal">@${s.leetcode_username}</div>
-                                        </div>
-                                    </a>
-                                </td>
-                                <td class="text-center fw-extrabold fs-6 text-easy">${s.total_solved}</td>
-                                <td class="text-center">
-                                    ${s.today_solves > 0 ? `<span class="badge bg-warning text-dark font-monospace fw-bold">+${s.today_solves}</span>` : `<span class="text-secondary-custom">-</span>`}
-                                </td>
-                                <td class="text-center font-monospace fw-bold fs-6">
-                                    ${s.current_streak > 0 ? `${s.current_streak}🔥` : `<span class="text-secondary-custom">0</span>`}
-                                </td>
-                            `;
-                            solversBody.appendChild(tr);
-                        });
-                    } else {
-                        solversBody.innerHTML = `
-                            <tr>
-                                <td colspan="5" class="text-center text-secondary-custom py-5">
-                                    <i class="bi bi-emoji-neutral display-6 mb-3"></i>
-                                    <p>No students found. Add some in the Admin Panel.</p>
-                                </td>
-                            </tr>
-                        `;
-                    }
-                    
-                    // Render Weekly Summary
-                    if (data.weekly_report) {
-                        document.getElementById("weeklyReportCard").style.display = "block";
-                        document.getElementById("weeklyTopSolver").textContent = data.weekly_report.top_solver || "None";
-                        document.getElementById("weeklyMostActive").textContent = data.weekly_report.most_active || "None";
-                        document.getElementById("weeklyTopImprovement").textContent = data.weekly_report.top_improvement || "None";
-                        document.getElementById("weeklySolvesAvg").textContent = `${data.weekly_report.problems_solved} solves (Avg: ${data.weekly_report.average_solves} / student)`;
-                        document.getElementById("weeklyInactiveMembers").textContent = data.weekly_report.inactive_members || "None";
-                    }
-                    
-                    // Render Activity Feed
-                    const activityFeed = document.getElementById("recentActivityFeed");
-                    activityFeed.innerHTML = "";
-                    if (data.recent_submissions && data.recent_submissions.length > 0) {
-                        data.recent_submissions.forEach((sub, idx) => {
-                            let diffClass = "medium";
-                            if (sub.difficulty === "Easy") diffClass = "easy";
-                            else if (sub.difficulty === "Hard") diffClass = "hard";
-                            
-                            const div = document.createElement("div");
-                            div.className = `feed-item ${diffClass} animate-fade-in`;
-                            div.style.animationDelay = `${idx * 0.05}s`;
-                            div.innerHTML = `
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <span class="fw-bold">${sub.student_name}</span> 
-                                        <span class="text-secondary-custom">solved</span>
-                                        <a href="https://leetcode.com/problems/${sub.title_slug}" target="_blank" class="fw-semibold text-decoration-none text-reset ms-1">
-                                            ${sub.title}
-                                        </a>
-                                    </div>
-                                    <span class="badge-difficulty bg-${diffClass} text-dark">
-                                        ${sub.difficulty}
-                                    </span>
-                                </div>
-                                <div class="fs-7 text-secondary-custom mt-1">
-                                    <i class="bi bi-clock me-1"></i>${sub.time_ago}
-                                </div>
-                            `;
-                            activityFeed.appendChild(div);
-                        });
-                    } else {
-                        activityFeed.innerHTML = `
-                            <div class="text-center text-secondary-custom py-4">
-                                <p>No recent submissions fetched yet. Trigger an update in the Admin Panel.</p>
-                            </div>
-                        `;
-                    }
-                    
-                    // Render Daily Challenge
-                    if (data.daily_challenge) {
-                        document.getElementById("challengeTitle").textContent = data.daily_challenge.title;
-                        const difficultyBadge = document.getElementById("challengeDifficulty");
-                        const diff = data.daily_challenge.difficulty;
-                        difficultyBadge.textContent = diff;
-                        difficultyBadge.className = `badge bg-${diff === 'Easy' ? 'easy' : (diff === 'Hard' ? 'hard' : 'medium')} text-dark`;
-                        
-                        document.getElementById("challengeLink").href = `https://leetcode.com/problems/${data.daily_challenge.title_slug}/`;
-                        document.getElementById("challengeCompletion").textContent = `${data.challenge_completed_count} / ${data.total_students}`;
-                    }
-                    
-                    // Render Milestones
-                    const milestonesFeed = document.getElementById("milestonesFeed");
-                    milestonesFeed.innerHTML = "";
-                    if (data.notifications && data.notifications.length > 0) {
-                        data.notifications.forEach(notif => {
-                            const div = document.createElement("div");
-                            div.className = "p-3 mb-2 rounded-3 border border-secondary border-opacity-10 bg-dark bg-opacity-10";
-                            div.innerHTML = `
-                                <div class="fs-6 fw-semibold text-dark mb-1">${notif.content}</div>
-                                <div class="fs-7 text-secondary-custom font-monospace">${notif.time_ago}</div>
-                            `;
-                            milestonesFeed.appendChild(div);
-                        });
-                    } else {
-                        milestonesFeed.innerHTML = `
-                            <div class="text-center text-secondary-custom py-4">
-                                <p>No notifications generated yet.</p>
-                            </div>
-                        `;
-                    }
-                }
-            } catch (err) {
-                console.error(err);
-                document.getElementById("loader").innerHTML = `
-                    <div class="alert alert-danger max-width-md mx-auto" role="alert">
-                        <i class="bi bi-exclamation-octagon-fill me-2 fs-5"></i>
-                        Unable to connect to the backend server. Make sure your Render server is running.
-                    </div>
-                `;
+            const deptSelect = document.getElementById("deptSelect");
+            const yearSelect = document.getElementById("yearSelect");
+            const applyBtn = document.getElementById("applyFiltersBtn");
+            const loader = document.getElementById("loader");
+            const content = document.getElementById("dashboard-content");
+            
+            // Set initial HOD default department if logged in
+            const adminDept = localStorage.getItem("admin_dept");
+            if (deptSelect && adminDept && adminDept !== "ALL") {
+                deptSelect.value = adminDept;
             }
+            
+            async function loadDashboard() {
+                loader.style.display = "block";
+                content.style.display = "none";
+                
+                const selectedDept = deptSelect ? deptSelect.value : "ALL";
+                const selectedYear = yearSelect ? yearSelect.value : "ALL";
+                
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/dashboard?student_id=${studentId}&dept=${selectedDept}&year=${selectedYear}`);
+                    const data = await response.json();
+                    
+                    if (response.ok && data.status === "success") {
+                        loader.style.display = "none";
+                        content.style.display = "block";
+                        
+                        // Render aggregates
+                        const dept = data.student ? data.student.department : selectedDept;
+                        const year = data.student ? data.student.academic_year : selectedYear;
+                        
+                        let classText = "";
+                        if (dept !== "ALL" && year !== "ALL") {
+                            let yearSuffix = "th";
+                            const yrNum = parseInt(year);
+                            if (yrNum === 1) yearSuffix = "st";
+                            else if (yrNum === 2) yearSuffix = "nd";
+                            else if (yrNum === 3) yearSuffix = "rd";
+                            classText = `${dept} - ${year}${yearSuffix} Yr`;
+                        } else {
+                            classText = `${dept === 'ALL' ? 'All Depts' : dept} - ${year === 'ALL' ? 'All Yrs' : year + ' Yr'}`;
+                        }
+                        
+                        document.getElementById("classLabel").textContent = classText;
+                        document.getElementById("todaySolvesVal").textContent = data.today_solves || 0;
+                        document.getElementById("totalSolvesVal").textContent = data.total_solves || 0;
+                        
+                        // Render Top Solvers
+                        const solversBody = document.getElementById("topSolversBody");
+                        solversBody.innerHTML = "";
+                        if (data.top_students && data.top_students.length > 0) {
+                            data.top_students.forEach((s, idx) => {
+                                let medal = `#${idx + 1}`;
+                                if (idx === 0) medal = "🥇";
+                                else if (idx === 1) medal = "🥈";
+                                else if (idx === 2) medal = "🥉";
+                                
+                                const avatar = s.avatar_url || 'https://assets.leetcode.com/users/default_avatar.png';
+                                
+                                const tr = document.createElement("tr");
+                                tr.innerHTML = `
+                                    <td class="fw-bold fs-5 text-secondary-custom">${medal}</td>
+                                    <td>
+                                        <a href="${(window.getPageUrl || ((p) => p))('student.html')}?id=${s.id}" class="fw-bold text-decoration-none text-reset d-flex align-items-center">
+                                            <img src="${avatar}" alt="${s.name}" class="rounded-circle me-3" style="width: 32px; height: 32px; object-fit: cover;">
+                                            <div>
+                                                <div class="fs-6">${s.name}</div>
+                                                <div class="fs-7 text-secondary-custom fw-normal">@${s.leetcode_username}</div>
+                                            </div>
+                                        </a>
+                                    </td>
+                                    <td class="text-center fw-extrabold fs-6 text-easy">${s.total_solved}</td>
+                                    <td class="text-center">
+                                        ${s.today_solves > 0 ? `<span class="badge bg-warning text-dark font-monospace fw-bold">+${s.today_solves}</span>` : `<span class="text-secondary-custom">-</span>`}
+                                    </td>
+                                    <td class="text-center font-monospace fw-bold fs-6">
+                                        ${s.current_streak > 0 ? `${s.current_streak}🔥` : `<span class="text-secondary-custom">0</span>`}
+                                    </td>
+                                `;
+                                solversBody.appendChild(tr);
+                            });
+                        } else {
+                            solversBody.innerHTML = `
+                                <tr>
+                                    <td colspan="5" class="text-center text-secondary-custom py-5">
+                                        <i class="bi bi-emoji-neutral display-6 mb-3"></i>
+                                        <p>No students found for this department/year.</p>
+                                    </td>
+                                </tr>
+                            `;
+                        }
+                        
+                        // Render Weekly Summary
+                        if (data.weekly_report) {
+                            document.getElementById("weeklyReportCard").style.display = "block";
+                            document.getElementById("weeklyTopSolver").textContent = data.weekly_report.top_solver || "None";
+                            document.getElementById("weeklyMostActive").textContent = data.weekly_report.most_active || "None";
+                            document.getElementById("weeklyTopImprovement").textContent = data.weekly_report.top_improvement || "None";
+                            document.getElementById("weeklySolvesAvg").textContent = `${data.weekly_report.problems_solved} solves (Avg: ${data.weekly_report.average_solves} / student)`;
+                            document.getElementById("weeklyInactiveMembers").textContent = data.weekly_report.inactive_members || "None";
+                        } else {
+                            document.getElementById("weeklyReportCard").style.display = "none";
+                        }
+                        
+                        // Render Activity Feed
+                        const activityFeed = document.getElementById("recentActivityFeed");
+                        activityFeed.innerHTML = "";
+                        if (data.recent_submissions && data.recent_submissions.length > 0) {
+                            data.recent_submissions.forEach((sub, idx) => {
+                                let diffClass = "medium";
+                                if (sub.difficulty === "Easy") diffClass = "easy";
+                                else if (sub.difficulty === "Hard") diffClass = "hard";
+                                
+                                const div = document.createElement("div");
+                                div.className = `feed-item ${diffClass} animate-fade-in`;
+                                div.style.animationDelay = `${idx * 0.05}s`;
+                                div.innerHTML = `
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <span class="fw-bold">${sub.student_name}</span> 
+                                            <span class="text-secondary-custom">solved</span>
+                                            <a href="https://leetcode.com/problems/${sub.title_slug}" target="_blank" class="fw-semibold text-decoration-none text-reset ms-1">
+                                                ${sub.title}
+                                            </a>
+                                        </div>
+                                        <span class="badge-difficulty bg-${diffClass} text-dark">
+                                            ${sub.difficulty}
+                                        </span>
+                                    </div>
+                                    <div class="fs-7 text-secondary-custom mt-1">
+                                        <i class="bi bi-clock me-1"></i>${sub.time_ago}
+                                    </div>
+                                `;
+                                activityFeed.appendChild(div);
+                            });
+                        } else {
+                            activityFeed.innerHTML = `
+                                <div class="text-center text-secondary-custom py-4">
+                                    <p>No recent submissions found for this department/year.</p>
+                                </div>
+                            `;
+                        }
+                        
+                        // Render Daily Challenge
+                        if (data.daily_challenge) {
+                            document.getElementById("challengeTitle").textContent = data.daily_challenge.title;
+                            const difficultyBadge = document.getElementById("challengeDifficulty");
+                            const diff = data.daily_challenge.difficulty;
+                            difficultyBadge.textContent = diff;
+                            difficultyBadge.className = `badge bg-${diff === 'Easy' ? 'easy' : (diff === 'Hard' ? 'hard' : 'medium')} text-dark`;
+                            
+                            document.getElementById("challengeLink").href = `https://leetcode.com/problems/${data.daily_challenge.title_slug}/`;
+                            document.getElementById("challengeCompletion").textContent = `${data.challenge_completed_count} / ${data.total_students}`;
+                        }
+                        
+                        // Render Milestones
+                        const milestonesFeed = document.getElementById("milestonesFeed");
+                        milestonesFeed.innerHTML = "";
+                        if (data.notifications && data.notifications.length > 0) {
+                            data.notifications.forEach(notif => {
+                                const div = document.createElement("div");
+                                div.className = "p-3 mb-2 rounded-3 border border-secondary border-opacity-10 bg-dark bg-opacity-10";
+                                div.innerHTML = `
+                                    <div class="fs-6 fw-semibold text-dark mb-1">${notif.content}</div>
+                                    <div class="fs-7 text-secondary-custom font-monospace">${notif.time_ago}</div>
+                                `;
+                                milestonesFeed.appendChild(div);
+                            });
+                        } else {
+                            milestonesFeed.innerHTML = `
+                                <div class="text-center text-secondary-custom py-4">
+                                    <p>No notifications generated yet.</p>
+                                </div>
+                            `;
+                        }
+                    }
+                } catch (err) {
+                    console.error(err);
+                    loader.innerHTML = `
+                        <div class="alert alert-danger max-width-md mx-auto" role="alert">
+                            <i class="bi bi-exclamation-octagon-fill me-2 fs-5"></i>
+                            Unable to connect to the backend server. Make sure your Render server is running.
+                        </div>
+                    `;
+                }
+            }
+            
+            // Event listeners
+            if (applyBtn) {
+                applyBtn.addEventListener("click", loadDashboard);
+            }
+            
+            // Initial load
+            loadDashboard();
         });
     </script>
 </body>

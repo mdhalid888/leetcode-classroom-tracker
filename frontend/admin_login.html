@@ -130,6 +130,7 @@
                     
                     if (response.ok && data.status === "success") {
                         localStorage.setItem("admin_token", data.admin_token);
+                        localStorage.setItem("admin_email", emailVal);
                         window.location.href = getPageUrl("admin.html");
                     } else {
                         errorMsg.textContent = data.message || "Invalid credentials.";

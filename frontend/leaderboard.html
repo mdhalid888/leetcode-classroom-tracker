@@ -58,7 +58,11 @@
                     </select>
                 </div>
 
-                <button id="applyFiltersBtn" class="btn btn-sm btn-easy text-dark fw-bold rounded-pill px-4">Apply</button>
+                <button id="applyFiltersBtn" class="btn btn-sm btn-easy text-dark fw-bold rounded-pill px-4 me-md-4">Apply</button>
+                
+                <div class="d-flex align-items-center gap-1 ms-md-auto mt-2 mt-md-0" style="min-width: 250px;">
+                    <input type="text" id="searchInput" class="form-control bg-dark bg-opacity-10 text-dark border-secondary border-opacity-20 rounded-pill px-3 py-1 fs-7" placeholder="Search student name...">
+                </div>
             </div>
 
             <!-- Sorting Metric Tabs -->
@@ -227,6 +231,26 @@
                 });
             });
             
+            // Search Input Listener
+            const searchInput = document.getElementById("searchInput");
+            if (searchInput) {
+                searchInput.addEventListener("input", (e) => {
+                    const query = e.target.value.toLowerCase().trim();
+                    const rows = document.querySelectorAll("#leaderboardBody tr");
+                    rows.forEach(row => {
+                        const nameCell = row.cells[1];
+                        if (nameCell) {
+                            const text = nameCell.textContent.toLowerCase();
+                            if (text.includes(query)) {
+                                row.style.display = "";
+                            } else {
+                                row.style.display = "none";
+                            }
+                        }
+                    });
+                });
+            }
+
             applyBtn.addEventListener("click", loadLeaderboard);
             
             // Load initially

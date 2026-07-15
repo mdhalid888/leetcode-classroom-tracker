@@ -26,21 +26,51 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
     
+    // Helper to extract role details from admin email
+    const getAdminRoleDetails = (email) => {
+        if (!email) return { title: "Admin", dept: "ALL" };
+        const e = email.toLowerCase().trim();
+        if (e === 'test456@gmail.com') return { title: "Admin", dept: "ALL" };
+        
+        // HODs
+        if (e === 'nitithod@nehrucolleges.com') return { title: "IT HOD", dept: "IT" };
+        if (e === 'nitcsehod@nehrucolleges.com') return { title: "CSE HOD", dept: "CSE" };
+        if (e === 'nitccehod@nehrucolleges.com') return { title: "CCE HOD", dept: "CCE" };
+        if (e === 'nitaimlhod@nehrucolleges.com') return { title: "AIML HOD", dept: "AIML" };
+        if (e === 'nitcshod@nehrucolleges.com') return { title: "CS HOD", dept: "CS" };
+        
+        // Coordinators
+        if (e === 'nititiv@nehrucolleges.com') return { title: "IT IV Yr Coordinator", dept: "IT" };
+        if (e === 'nitcseiv@nehrucolleges.com') return { title: "CSE IV Yr Coordinator", dept: "CSE" };
+        
+        // Placements
+        if (e === 'nitplacements@nehrucolleges.com') return { title: "Placements Team", dept: "ALL" };
+        if (e === 'nitarunpatrick@nehrucolleges.com') return { title: "Placement Trainer (Arun)", dept: "ALL" };
+        if (e === 'nitjasonp@nehrucolleges.com') return { title: "Placement Trainer (Jason)", dept: "ALL" };
+        
+        return { title: "Coordinator", dept: "ALL" };
+    };
+
     // Build and inject navbar
     const navbarContainer = document.getElementById("navbar-container");
     if (navbarContainer) {
         let rightNavHtml = "";
         
         if (adminToken) {
+            const adminEmail = localStorage.getItem("admin_email") || "test456@gmail.com";
+            const role = getAdminRoleDetails(adminEmail);
+            localStorage.setItem("admin_dept", role.dept);
+            
             rightNavHtml = `
                 <div class="d-flex align-items-center gap-3">
                     <span class="text-secondary-custom fs-7 fw-semibold">
-                        <i class="bi bi-shield-lock-fill me-1 text-info"></i>Welcome back, Admin
+                        <i class="bi bi-shield-lock-fill me-1 text-info"></i>Welcome, ${role.title}
                     </span>
                     <a href="#" id="logoutBtn" class="btn btn-sm btn-outline-danger rounded-pill px-3">Logout</a>
                 </div>
             `;
         } else {
+            localStorage.removeItem("admin_dept");
             rightNavHtml = `
                 <div class="d-flex align-items-center gap-3">
                     <a href="${getPageUrl('admin_login.html')}" class="btn btn-sm btn-outline-easy rounded-pill px-3">

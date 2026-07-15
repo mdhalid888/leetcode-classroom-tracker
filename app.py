@@ -1115,20 +1115,33 @@ def api_admin_login():
     if email in ADMIN_CREDENTIALS and ADMIN_CREDENTIALS[email] == password:
         return jsonify({
             'status': 'success',
-            'admin_token': 'admin456@'
+            'admin_token': 'admin456@',
+            'admin_email': email
         })
     return jsonify({'status': 'error', 'message': 'Invalid email or password.'}), 401
 
 @app.route('/api/dashboard', methods=['GET'])
 def api_dashboard():
-    student = get_current_student_from_request()
-    if not student:
-        student = Student.query.filter_by(is_active=True).first()
+    dept = request.args.get('dept', '').strip().upper()
+    year = request.args.get('year', '').strip()
+    
+    student = None
+    if not dept or dept == 'ALL' or not year or year == 'ALL':
+        student = get_current_student_from_request()
         if not student:
-            return jsonify({'status': 'error', 'message': 'No student records exist in the database.'}), 400
-
-    class_dept = student.department
-    class_year = student.academic_year
+            student = Student.query.filter_by(is_active=True).first()
+            if not student:
+                return jsonify({'status': 'error', 'message': 'No student records exist in the database.'}), 400
+                
+    class_dept = dept if (dept and dept != 'ALL') else student.department
+    
+    if year and year != 'ALL':
+        try:
+            class_year = int(year)
+        except ValueError:
+            class_year = student.academic_year if student else 4
+    else:
+        class_year = student.academic_year if student else 4
     
     classmates = Student.query.filter_by(department=class_dept, academic_year=class_year, is_active=True).all()
     total_students = len(classmates)
