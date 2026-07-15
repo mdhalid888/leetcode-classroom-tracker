@@ -240,19 +240,25 @@
                         content.style.display = "block";
                         
                         // Render aggregates
-                        const dept = data.student ? data.student.department : selectedDept;
-                        const year = data.student ? data.student.academic_year : selectedYear;
-                        
                         let classText = "";
-                        if (dept !== "ALL" && year !== "ALL") {
+                        if (selectedDept !== "ALL" && selectedYear !== "ALL") {
                             let yearSuffix = "th";
-                            const yrNum = parseInt(year);
+                            const yrNum = parseInt(selectedYear);
                             if (yrNum === 1) yearSuffix = "st";
                             else if (yrNum === 2) yearSuffix = "nd";
                             else if (yrNum === 3) yearSuffix = "rd";
-                            classText = `${dept} - ${year}${yearSuffix} Yr`;
+                            classText = `${selectedDept} - ${selectedYear}${yearSuffix} Yr`;
+                        } else if (selectedDept !== "ALL") {
+                            classText = `${selectedDept} - All Yrs`;
+                        } else if (selectedYear !== "ALL") {
+                            let yearSuffix = "th";
+                            const yrNum = parseInt(selectedYear);
+                            if (yrNum === 1) yearSuffix = "st";
+                            else if (yrNum === 2) yearSuffix = "nd";
+                            else if (yrNum === 3) yearSuffix = "rd";
+                            classText = `All Depts - ${selectedYear}${yearSuffix} Yr`;
                         } else {
-                            classText = `${dept === 'ALL' ? 'All Depts' : dept} - ${year === 'ALL' ? 'All Yrs' : year + ' Yr'}`;
+                            classText = "ALL";
                         }
                         
                         document.getElementById("classLabel").textContent = classText;

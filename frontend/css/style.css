@@ -360,11 +360,10 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Custom Download Report Buttons */
 .btn-download-report {
-    border: 1px solid var(--color-easy) !important;
+    border: 1px solid;
     border-radius: 12px;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    background-color: var(--color-easy) !important;
-    color: #121212 !important;
+    background: transparent;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -372,43 +371,49 @@ h1, h2, h3, h4, h5, h6 {
     cursor: pointer;
 }
 
-.btn-download-report i {
-    color: #121212 !important;
+.light-theme .btn-download-report {
+    border-color: rgba(0, 0, 0, 0.1);
+    color: var(--text-primary-light);
 }
 
-.light-theme .btn-download-report,
 .dark-theme .btn-download-report {
-    background-color: var(--color-easy) !important;
-    border-color: var(--color-easy) !important;
-    color: #121212 !important;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary-dark);
 }
 
-.btn-download-report:hover {
-    opacity: 0.9 !important;
+.light-theme .btn-download-report:hover {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.25);
     transform: translateY(-3px);
-    box-shadow: 0 4px 12px rgba(0, 184, 169, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.light-theme .btn-download-report:hover,
 .dark-theme .btn-download-report:hover {
-    background-color: var(--color-easy) !important;
-    border-color: var(--color-easy) !important;
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* Theme Adaptive Form Select (Dropdowns) */
 .form-select-custom {
     transition: all 0.3s ease;
-    border: 1px solid rgba(128, 128, 128, 0.25) !important;
+    border: 1px solid rgba(0, 184, 169, 0.35) !important;
 }
 
 .light-theme .form-select-custom {
-    background-color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.75) !important;
     color: var(--text-primary-light) !important;
 }
 
 .dark-theme .form-select-custom {
-    background-color: #1e293b !important;
+    background-color: rgba(30, 41, 59, 0.75) !important;
     color: var(--text-primary-dark) !important;
+}
+
+.form-select-custom:focus {
+    border-color: var(--color-easy) !important;
+    box-shadow: 0 0 0 0.25rem rgba(0, 184, 169, 0.15) !important;
 }
 
 /* Theme Adaptive Search Input */
