@@ -198,8 +198,6 @@
         document.addEventListener("DOMContentLoaded", async () => {
             const studentData = localStorage.getItem("current_student");
             const adminToken = localStorage.getItem("admin_token");
-            if (!studentData && !adminToken) return; // Redirect handled by navbar.js
-            
             const urlParams = new URLSearchParams(window.location.search);
             let targetId = urlParams.get("id");
             
