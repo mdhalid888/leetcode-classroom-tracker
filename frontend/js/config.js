@@ -10,4 +10,4 @@ const API_BASE_URL = isLocalHost
     ? `http://${window.location.hostname || '127.0.0.1'}:5000`
     : 'https://leetcode-classroom-tracker-402e.onrender.com';
 
-// Trigger release rebuild
+// Release build with login disabled

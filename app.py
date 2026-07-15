@@ -119,21 +119,12 @@ def require_login():
             return redirect(url_for('admin_login'))
         return # Skip student check for admin
         
-    # 2. Student endpoints protection
-    allowed_endpoints = ['login_route', 'admin_login', 'static']
-    if request.endpoint and request.endpoint in allowed_endpoints:
-        return
-        
-    if request.path.startswith('/static'):
-        return
-        
-    if 'student_id' not in session:
-        return redirect(url_for('login_route'))
-        
-    g.current_student = Student.query.get(session['student_id'])
-    if not g.current_student:
-        session.pop('student_id', None)
-        return redirect(url_for('login_route'))
+    # Set current student if session exists, otherwise None
+    student_id = session.get('student_id')
+    if student_id:
+        g.current_student = Student.query.get(student_id)
+    else:
+        g.current_student = None
 
 @app.route('/login', methods=['GET', 'POST'])
 def login_route():
@@ -191,11 +182,20 @@ def admin_logout():
 
 @app.route('/')
 def dashboard():
-    class_dept = g.current_student.department
-    class_year = g.current_student.academic_year
+    class_dept = g.current_student.department if g.current_student else 'ALL'
+    class_year = g.current_student.academic_year if g.current_student else 'ALL'
     
     # Filter students in class
-    classmates = Student.query.filter_by(department=class_dept, academic_year=class_year, is_active=True).all()
+    query = Student.query.filter_by(is_active=True)
+    if class_dept != 'ALL':
+        query = query.filter_by(department=class_dept)
+    if class_year != 'ALL':
+        try:
+            query = query.filter_by(academic_year=int(class_year))
+        except ValueError:
+            pass
+            
+    classmates = query.all()
     total_students = len(classmates)
     classmate_ids = [s.id for s in classmates]
     
@@ -221,7 +221,15 @@ def dashboard():
         ).distinct().count()
     
     # Top 5 solvers for class leaderboard snippet
-    top_students = Student.query.filter_by(department=class_dept, academic_year=class_year, is_active=True).order_by(Student.total_solved.desc()).limit(5).all()
+    top_query = Student.query.filter_by(is_active=True)
+    if class_dept != 'ALL':
+        top_query = top_query.filter_by(department=class_dept)
+    if class_year != 'ALL':
+        try:
+            top_query = top_query.filter_by(academic_year=int(class_year))
+        except ValueError:
+            pass
+    top_students = top_query.order_by(Student.total_solved.desc()).limit(5).all()
     # Add dynamic unique today's solves to top students
     for student in top_students:
         student.today_solves = db.session.query(Submission.title_slug).filter(
@@ -543,9 +551,18 @@ def attendance_view():
     days = list(range(1, num_days + 1))
     month_name = f"{calendar.month_name[month]} {year}"
     
-    class_dept = g.current_student.department
-    class_year = g.current_student.academic_year
-    students = Student.query.filter_by(department=class_dept, academic_year=class_year, is_active=True).order_by(Student.name).all()
+    class_dept = g.current_student.department if g.current_student else 'ALL'
+    class_year = g.current_student.academic_year if g.current_student else 'ALL'
+    
+    query = Student.query.filter_by(is_active=True)
+    if class_dept != 'ALL':
+        query = query.filter_by(department=class_dept)
+    if class_year != 'ALL':
+        try:
+            query = query.filter_by(academic_year=int(class_year))
+        except ValueError:
+            pass
+    students = query.order_by(Student.name).all()
     
     attendance_records = []
     for s in students:
