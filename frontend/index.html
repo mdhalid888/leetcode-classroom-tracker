@@ -37,7 +37,7 @@
                 <div class="row g-3 align-items-center">
                     <div class="col-md-4">
                         <label for="deptSelect" class="form-label fw-semibold text-secondary-custom fs-7 mb-1">Filter Department</label>
-                        <select id="deptSelect" class="form-select bg-dark bg-opacity-10 text-dark border-secondary border-opacity-20 rounded-pill px-3">
+                        <select id="deptSelect" class="form-select form-select-custom rounded-pill px-3 fs-7">
                             <option value="ALL">All Departments</option>
                             <option value="IT">Information Technology (IT)</option>
                             <option value="CSE">Computer Science & Engineering (CSE)</option>
@@ -48,7 +48,7 @@
                     </div>
                     <div class="col-md-4">
                         <label for="yearSelect" class="form-label fw-semibold text-secondary-custom fs-7 mb-1">Filter Academic Year</label>
-                        <select id="yearSelect" class="form-select bg-dark bg-opacity-10 text-dark border-secondary border-opacity-20 rounded-pill px-3">
+                        <select id="yearSelect" class="form-select form-select-custom rounded-pill px-3 fs-7">
                             <option value="ALL">All Years</option>
                             <option value="1">1st Year</option>
                             <option value="2">2nd Year</option>
@@ -222,11 +222,7 @@
             const loader = document.getElementById("loader");
             const content = document.getElementById("dashboard-content");
             
-            // Set initial HOD default department if logged in
-            const adminDept = localStorage.getItem("admin_dept");
-            if (deptSelect && adminDept && adminDept !== "ALL") {
-                deptSelect.value = adminDept;
-            }
+            
             
             async function loadDashboard() {
                 loader.style.display = "block";

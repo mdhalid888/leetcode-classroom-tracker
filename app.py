@@ -1129,25 +1129,30 @@ def api_dashboard():
     dept = request.args.get('dept', '').strip().upper()
     year = request.args.get('year', '').strip()
     
-    student = None
-    if not dept or dept == 'ALL' or not year or year == 'ALL':
-        student = get_current_student_from_request()
-        if not student:
-            student = Student.query.filter_by(is_active=True).first()
-            if not student:
-                return jsonify({'status': 'error', 'message': 'No student records exist in the database.'}), 400
-                
-    class_dept = dept if (dept and dept != 'ALL') else student.department
+    student = get_current_student_from_request()
     
+    # Base query for classmates
+    query_filter = Student.query.filter_by(is_active=True)
+    
+    # Apply department filter if not empty and not 'ALL'
+    if dept and dept != 'ALL':
+        query_filter = query_filter.filter_by(department=dept)
+        class_dept = dept
+    else:
+        class_dept = 'ALL'
+        
+    # Apply academic year filter if not empty and not 'ALL'
     if year and year != 'ALL':
         try:
-            class_year = int(year)
+            val_year = int(year)
+            query_filter = query_filter.filter_by(academic_year=val_year)
+            class_year = str(val_year)
         except ValueError:
-            class_year = student.academic_year if student else 4
+            class_year = 'ALL'
     else:
-        class_year = student.academic_year if student else 4
-    
-    classmates = Student.query.filter_by(department=class_dept, academic_year=class_year, is_active=True).all()
+        class_year = 'ALL'
+        
+    classmates = query_filter.all()
     total_students = len(classmates)
     classmate_ids = [s.id for s in classmates]
     
