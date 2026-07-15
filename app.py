@@ -30,7 +30,11 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 }
 
 db.init_app(app)
-CORS(app, supports_credentials=True)
+CORS(app, resources={r"/*": {
+    "origins": "*",
+    "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    "allow_headers": ["Content-Type", "X-Admin-Auth", "Authorization", "Accept", "Origin"]
+}}, supports_credentials=False)
 
 # Helper function for human-readable time difference
 def time_ago(dt):
