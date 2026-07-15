@@ -8,3 +8,4 @@ gunicorn==21.2.0
 psycopg2-binary==2.9.9
 reportlab==4.1.0
 xlsxwriter==3.1.9
+flask-cors==4.0.0

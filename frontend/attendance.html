@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance | LeetCode Class Tracker</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="light-theme">
+    
+    <!-- Navbar Container -->
+    <div id="navbar-container"></div>
+
+    <!-- Main Content -->
+    <div class="container my-4">
+        <div class="card-glass p-4 animate-fade-in">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+                <div>
+                    <h2 class="mb-1 fs-3"><i class="bi bi-calendar-check-fill text-easy me-2"></i>Daily Solving Attendance</h2>
+                    <p class="text-secondary-custom mb-0">Track student solving consistency day-by-day for <strong id="monthNameHeader">-</strong>.</p>
+                </div>
+                
+                <!-- Month Selector Form -->
+                <div class="mt-3 mt-md-0 d-flex gap-2">
+                    <select id="monthSelect" class="form-select form-select-custom rounded-pill px-3 py-1 fs-7" style="width: auto; min-width: 120px;">
+                        <!-- Rendered dynamically -->
+                    </select>
+                    <select id="yearSelect" class="form-select form-select-custom rounded-pill px-3 py-1 fs-7" style="width: auto; min-width: 100px;">
+                        <!-- Rendered dynamically -->
+                    </select>
+                    <button id="applyFilterBtn" class="btn btn-sm btn-easy text-dark fw-bold rounded-pill px-3">Apply</button>
+                </div>
+            </div>
+
+            <!-- Loader -->
+            <div id="gridLoader" class="text-center py-5">
+                <div class="spinner-border text-easy" role="status">
+                    <span class="visually-hidden">Loading grid...</span>
+                </div>
+            </div>
+
+            <!-- Attendance Grid Table -->
+            <div class="table-responsive" id="attendanceGridWrapper" style="max-height: 600px; overflow-y: auto; display: none;">
+                <table class="table table-bordered text-center align-middle" style="border-color: rgba(0, 0, 0, 0.08);">
+                    <thead class="sticky-top attendance-header" style="z-index: 10;">
+                        <tr class="fs-8 fw-bold" id="attendanceHeaderRow">
+                            <th scope="col" style="text-align: left; min-width: 150px; left: 0; position: sticky; z-index: 11;" class="border-end shadow-sm attendance-header-first">Student</th>
+                            <!-- Day numbers added dynamically -->
+                            <th scope="col" class="px-2" style="min-width: 60px;">Solves</th>
+                            <th scope="col" class="px-2" style="min-width: 60px;">Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceBody">
+                        <!-- Rendered dynamically -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-4 d-flex flex-wrap gap-4 justify-content-center border-top border-secondary border-opacity-10 pt-3">
+                <div class="fs-7"><span class="text-success"><i class="bi bi-check-circle-fill"></i></span> Solved at least 1 problem</div>
+                <div class="fs-7"><span class="text-danger"><i class="bi bi-x-circle"></i></span> No solves recorded</div>
+                <div class="fs-7"><span class="text-secondary opacity-35"><i class="bi bi-circle"></i></span> Upcoming day</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Container -->
+    <div id="footer-container"></div>
+
+    <!-- Bootstrap 5 JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Config and Core scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/navbar.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const studentData = localStorage.getItem("current_student");
+            const adminToken = localStorage.getItem("admin_token");
+            if (!studentData && !adminToken) return; // Redirect handled by navbar.js
+            
+            const student = studentData ? JSON.parse(studentData) : null;
+            const studentId = student ? student.id : '';
+            
+            const monthSelect = document.getElementById("monthSelect");
+            const yearSelect = document.getElementById("yearSelect");
+            const applyBtn = document.getElementById("applyFilterBtn");
+            const gridLoader = document.getElementById("gridLoader");
+            const gridWrapper = document.getElementById("attendanceGridWrapper");
+            const headerRow = document.getElementById("attendanceHeaderRow");
+            const attendanceBody = document.getElementById("attendanceBody");
+            const monthNameHeader = document.getElementById("monthNameHeader");
+            
+            let initialLoad = true;
+            
+            async function loadAttendanceGrid() {
+                gridLoader.style.display = "block";
+                gridWrapper.style.display = "none";
+                
+                const month = monthSelect.value || '';
+                const year = yearSelect.value || '';
+                
+                try {
+                    const url = `${API_BASE_URL}/api/attendance?student_id=${studentId}&month=${month}&year=${year}`;
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    
+                    if (response.ok && data.status === "success") {
+                        gridLoader.style.display = "none";
+                        gridWrapper.style.display = "block";
+                        
+                        monthNameHeader.textContent = data.month_name;
+                        
+                        // Populate month/year options if initial load
+                        if (initialLoad) {
+                            monthSelect.innerHTML = "";
+                            data.months_list.forEach(m => {
+                                const option = document.createElement("option");
+                                option.value = m[0];
+                                option.textContent = m[1];
+                                if (data.active_month === m[0]) option.selected = true;
+                                monthSelect.appendChild(option);
+                            });
+                            
+                            yearSelect.innerHTML = "";
+                            data.years_list.forEach(y => {
+                                const option = document.createElement("option");
+                                option.value = y;
+                                option.textContent = y;
+                                if (data.active_year === y) option.selected = true;
+                                yearSelect.appendChild(option);
+                            });
+                            
+                            initialLoad = false;
+                        }
+                        
+                        // Re-build header row day columns
+                        headerRow.innerHTML = '<th scope="col" style="text-align: left; min-width: 150px; left: 0; position: sticky; z-index: 11;" class="border-end shadow-sm attendance-header-first">Student</th>';
+                        data.days.forEach(day => {
+                            const th = document.createElement("th");
+                            th.className = "cell-att";
+                            th.textContent = day;
+                            headerRow.appendChild(th);
+                        });
+                        
+                        const thSolves = document.createElement("th");
+                        thSolves.className = "px-2";
+                        thSolves.style.minWidth = "60px";
+                        thSolves.textContent = "Solves";
+                        headerRow.appendChild(thSolves);
+                        
+                        const thRate = document.createElement("th");
+                        thRate.className = "px-2";
+                        thRate.style.minWidth = "60px";
+                        thRate.textContent = "Rate";
+                        headerRow.appendChild(thRate);
+                        
+                        // Populate attendance body rows
+                        attendanceBody.innerHTML = "";
+                        if (data.attendance_records && data.attendance_records.length > 0) {
+                            data.attendance_records.forEach(record => {
+                                const tr = document.createElement("tr");
+                                
+                                // Name cell
+                                const tdName = document.createElement("td");
+                                tdName.style.textAlign = "left";
+                                tdName.style.left = "0";
+                                tdName.style.position = "sticky";
+                                tdName.style.zIndex = "5";
+                                tdName.className = "fw-bold border-end shadow-sm attendance-name-cell";
+                                tdName.innerHTML = `<a href="student.html?id=${record.student.id}" class="text-decoration-none text-reset">${record.student.name}</a>`;
+                                tr.appendChild(tdName);
+                                
+                                // Grid cells
+                                record.days_solved.forEach(status => {
+                                    const tdCell = document.createElement("td");
+                                    tdCell.className = "cell-att";
+                                    
+                                    if (status === 'solved') {
+                                        tdCell.innerHTML = '<span class="text-success" title="Solved problems"><i class="bi bi-check-circle-fill"></i></span>';
+                                    } else if (status === 'upcoming') {
+                                        tdCell.innerHTML = '<span class="text-secondary opacity-35" title="Upcoming day"><i class="bi bi-circle"></i></span>';
+                                    } else {
+                                        tdCell.innerHTML = '<span class="text-danger border-opacity-10" title="No solves"><i class="bi bi-x-circle"></i></span>';
+                                    }
+                                    tr.appendChild(tdCell);
+                                });
+                                
+                                // Solves & Rate cells
+                                const tdSolves = document.createElement("td");
+                                tdSolves.className = "fw-bold text-easy font-monospace fs-7";
+                                tdSolves.textContent = record.total_solves_this_month;
+                                tr.appendChild(tdSolves);
+                                
+                                const tdRate = document.createElement("td");
+                                tdRate.className = "fw-bold text-info font-monospace fs-7";
+                                tdRate.textContent = `${record.solve_rate}%`;
+                                tr.appendChild(tdRate);
+                                
+                                attendanceBody.appendChild(tr);
+                            });
+                        } else {
+                            attendanceBody.innerHTML = `
+                                <tr>
+                                    <td colspan="${data.days.length + 3}" class="text-center text-secondary-custom py-5">
+                                        <i class="bi bi-calendar-x display-6 mb-3"></i>
+                                        <p>No student data available for attendance tracking.</p>
+                                    </td>
+                                </tr>
+                            `;
+                        }
+                    }
+                } catch (err) {
+                    console.error(err);
+                    gridLoader.innerHTML = `
+                        <div class="alert alert-danger max-width-md mx-auto" role="alert">
+                            <i class="bi bi-exclamation-octagon-fill me-2 fs-5"></i>
+                            Failed to load attendance grid details.
+                        </div>
+                    `;
+                }
+            }
+            
+            applyBtn.addEventListener("click", loadAttendanceGrid);
+            
+            // Load initially
+            loadAttendanceGrid();
+        });
+    </script>
+</body>
+</html>

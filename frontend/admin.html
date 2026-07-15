@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | LeetCode Class Tracker</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="light-theme">
+    
+    <!-- Navbar Container -->
+    <div id="navbar-container"></div>
+
+    <!-- Main Content -->
+    <div class="container my-4">
+        <!-- Toast Alerts -->
+        <div id="alertContainer"></div>
+
+        <div class="row g-4">
+            <!-- Left Cards -->
+            <div class="col-lg-8 animate-fade-in" style="animation-delay: 0.1s;">
+                <!-- Download Classroom Reports Card -->
+                <div class="card-glass p-4 mb-4">
+                    <h3 class="fs-4 mb-3"><i class="bi bi-download text-info me-2"></i>Download Classroom Reports</h3>
+                    <p class="text-secondary-custom fs-7 mb-4">
+                        Export the latest student statistics in standard CSV, Excel, or PDF formats. 
+                        Reports include student registration numbers, total solved counts, streak data, and last update times.
+                    </p>
+                    
+                    <!-- Roster Filters for Exports -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label for="reportDeptSelect" class="form-label fw-semibold text-secondary-custom fs-7">Filter Department</label>
+                            <select id="reportDeptSelect" class="form-select bg-dark text-light border-secondary border-opacity-35 rounded-3 py-2">
+                                <option value="ALL">All Departments</option>
+                                <option value="CSE">CSE</option>
+                                <option value="IT">IT</option>
+                                <option value="CCE">CCE</option>
+                                <option value="AI ML">AI ML</option>
+                                <option value="CYBER">CYBER</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="reportYearSelect" class="form-label fw-semibold text-secondary-custom fs-7">Filter Academic Year</label>
+                            <select id="reportYearSelect" class="form-select bg-dark text-light border-secondary border-opacity-35 rounded-3 py-2">
+                                <option value="ALL">All Years</option>
+                                <option value="4">4th Year</option>
+                                <option value="3">3rd Year</option>
+                                <option value="2">2nd Year</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <a href="#" id="btnExportCSV" target="_blank" class="btn-download-report w-100 fw-bold fs-7 text-decoration-none">
+                                <i class="bi bi-filetype-csv fs-3 mb-2 text-warning d-block"></i> Export CSV
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="#" id="btnExportPDF" target="_blank" class="btn-download-report w-100 fw-bold fs-7 text-decoration-none">
+                                <i class="bi bi-file-pdf fs-3 mb-2 text-danger d-block"></i> Export PDF
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Class Database Scanner Card -->
+                <div class="card-glass p-4">
+                    <h3 class="fs-4 mb-3"><i class="bi bi-folder-fill text-warning me-2"></i>Class Database Scanner</h3>
+                    <p class="text-secondary-custom fs-7 mb-4">
+                        Scan your <code>uploads/</code> directory for class student Excel files (named like <code>IT_4.xlsx</code> or <code>CSE_3.xlsx</code>). 
+                        Syncing will automatically update or import classroom rosters.
+                    </p>
+                    
+                    <div class="mb-4">
+                        <span class="fs-7 fw-semibold text-secondary-custom d-block mb-2">Detected Class Files:</span>
+                        <div id="detectedFilesContainer">
+                            <div class="text-center py-3 border border-secondary border-opacity-10 rounded text-secondary-custom fs-7">
+                                <div class="spinner-border spinner-border-sm text-easy me-2" role="status"></div> Loading files...
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button id="scanSyncBtn" class="btn btn-easy text-dark fw-bold rounded-pill px-4">
+                        <i class="bi bi-search me-1"></i> Scan & Sync Class Databases
+                    </button>
+                </div>
+
+                <!-- Upload Class Database Card -->
+                <div class="card-glass p-4 mt-4">
+                    <h3 class="fs-4 mb-3"><i class="bi bi-cloud-upload-fill text-easy me-2"></i>Upload Class List</h3>
+                    <p class="text-secondary-custom fs-7 mb-4">
+                        Upload a class student Excel file (e.g. <code>IT_4.xlsx</code>). The file must contain columns like: <code>Name</code>, <code>Register Number</code>, and <code>LeetCode Username</code>.
+                    </p>
+                    <form id="uploadForm">
+                        <div class="mb-3">
+                            <input class="form-control login-input fs-7" type="file" id="classFile" accept=".xlsx" required>
+                        </div>
+                        <button type="submit" id="uploadBtn" class="btn btn-easy text-dark fw-bold rounded-pill px-4">
+                            <i class="bi bi-upload me-1"></i> Upload & Sync
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Status & Sync Panel (Right) -->
+            <div class="col-lg-4">
+                <div class="card-glass p-4 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <h3 class="fs-5 mb-4"><i class="bi bi-database-fill-gear text-easy me-2"></i>Sync Status</h3>
+                        
+                        <div class="d-flex justify-content-between mb-3 border-bottom border-secondary border-opacity-10 pb-2">
+                            <span class="text-secondary-custom">Active Students</span>
+                            <span id="activeStudentsCount" class="fw-bold">-</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3 border-bottom border-secondary border-opacity-10 pb-2">
+                            <span class="text-secondary-custom">Last Updated</span>
+                            <span class="fw-semibold text-easy fs-7" id="lastRunText">-</span>
+                        </div>
+                        
+                        <!-- Progress Indicator for Background Sync -->
+                        <div id="progressSection" class="mt-4 d-none">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="fs-7 text-secondary-custom" id="progressStudent">Syncing Student Name...</span>
+                                <span class="fs-7 fw-bold font-monospace text-easy" id="progressPercent">0%</span>
+                            </div>
+                            <div class="progress rounded-pill mb-3" style="height: 10px;">
+                                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-easy" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <div class="fs-8 text-secondary-custom text-center">
+                                <i class="bi bi-info-circle me-1"></i> Running in background. Do not refresh.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button id="triggerUpdateBtn" class="btn btn-warning text-dark fw-bold rounded-pill w-100 py-3">
+                            <i class="bi bi-arrow-repeat me-1"></i> Update All Profiles
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Container -->
+    <div id="footer-container"></div>
+
+    <!-- Bootstrap 5 JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Config and Core scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/navbar.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const adminToken = localStorage.getItem("admin_token");
+            if (!adminToken) return; // Redirect handled by navbar.js
+            
+            const activeStudentsCount = document.getElementById("activeStudentsCount");
+            const lastRunText = document.getElementById("lastRunText");
+            const filesContainer = document.getElementById("detectedFilesContainer");
+            const scanSyncBtn = document.getElementById("scanSyncBtn");
+            const uploadForm = document.getElementById("uploadForm");
+            const uploadBtn = document.getElementById("uploadBtn");
+            const triggerUpdateBtn = document.getElementById("triggerUpdateBtn");
+            const progressSection = document.getElementById("progressSection");
+            const progressStudent = document.getElementById("progressStudent");
+            const progressPercent = document.getElementById("progressPercent");
+            const progressBar = document.getElementById("progressBar");
+            
+            const reportDept = document.getElementById("reportDeptSelect");
+            const reportYear = document.getElementById("reportYearSelect");
+            const btnCSV = document.getElementById("btnExportCSV");
+            const btnPDF = document.getElementById("btnExportPDF");
+            
+            let pollInterval = null;
+            
+            // Set up download URLs dynamically
+            function updateReportUrls() {
+                const dept = reportDept.value;
+                const year = reportYear.value;
+                
+                btnCSV.href = `${API_BASE_URL}/admin/download/csv?dept=${dept}&year=${year}`;
+                btnPDF.href = `${API_BASE_URL}/admin/download/pdf?dept=${dept}&year=${year}`;
+            }
+            
+            reportDept.addEventListener("change", updateReportUrls);
+            reportYear.addEventListener("change", updateReportUrls);
+            updateReportUrls();
+            
+            function showToast(message, type = "success") {
+                const container = document.getElementById("alertContainer");
+                const alertHtml = `
+                    <div class="alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show rounded-3 shadow-sm" role="alert">
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                container.innerHTML = alertHtml;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            
+            async function loadAdminData() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/admin/dashboard`, {
+                        headers: {
+                            "X-Admin-Auth": adminToken
+                        }
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok && data.status === "success") {
+                        activeStudentsCount.textContent = data.active_students;
+                        lastRunText.textContent = data.last_updated;
+                        
+                        // Render Excel files
+                        filesContainer.innerHTML = "";
+                        if (data.detected_files && data.detected_files.length > 0) {
+                            const ul = document.createElement("ul");
+                            ul.className = "list-group list-group-flush fs-7 bg-transparent";
+                            
+                            data.detected_files.forEach(f => {
+                                const li = document.createElement("li");
+                                li.className = "list-group-item bg-transparent border-secondary border-opacity-10 px-0 d-flex justify-content-between align-items-center";
+                                li.innerHTML = `
+                                    <span><i class="bi bi-file-earmark-spreadsheet-fill text-success me-2"></i>${f.name}</span>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-secondary rounded-pill fs-8">${f.size}</span>
+                                        <button class="btn btn-link text-danger p-0 border-0 btn-delete-file" data-filename="${f.name}" title="Delete File">
+                                            <i class="bi bi-trash-fill fs-6"></i>
+                                        </button>
+                                    </div>
+                                `;
+                                ul.appendChild(li);
+                            });
+                            filesContainer.appendChild(ul);
+                            
+                            // Delete handlers
+                            document.querySelectorAll(".btn-delete-file").forEach(btn => {
+                                btn.addEventListener("click", async () => {
+                                    const filename = btn.getAttribute("data-filename");
+                                    if (confirm(`Are you sure you want to delete file '${filename}'? This will reset the database with the remaining files.`)) {
+                                        try {
+                                            const delRes = await fetch(`${API_BASE_URL}/api/admin/delete-file/${filename}`, {
+                                                method: "POST",
+                                                headers: {
+                                                    "X-Admin-Auth": adminToken
+                                                }
+                                            });
+                                            const delData = await delRes.json();
+                                            if (delRes.ok && delData.status === "success") {
+                                                showToast(delData.message, "success");
+                                                loadAdminData();
+                                            } else {
+                                                showToast(delData.message || "Failed to delete file.", "error");
+                                            }
+                                        } catch (err) {
+                                            showToast("Error deleting file.", "error");
+                                        }
+                                    }
+                                });
+                            });
+                        } else {
+                            filesContainer.innerHTML = `
+                                <div class="text-center py-3 border border-secondary border-opacity-10 rounded text-secondary-custom fs-7">
+                                    <i class="bi bi-info-circle me-1"></i> No Excel sheets found in uploads/ folder.
+                                </div>
+                            `;
+                        }
+                        
+                        // Check if updates are running
+                        if (data.update_status && data.update_status.in_progress) {
+                            startPolling();
+                        }
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+            
+            // Scan and Sync
+            scanSyncBtn.addEventListener("click", async () => {
+                scanSyncBtn.disabled = true;
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/admin/scan-uploads`, {
+                        method: "POST",
+                        headers: {
+                            "X-Admin-Auth": adminToken
+                        }
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok && data.status === "success") {
+                        showToast(data.message, "success");
+                        loadAdminData();
+                    } else {
+                        showToast(data.message || "Scan failed.", "error");
+                    }
+                } catch (err) {
+                    showToast("Error executing scan.", "error");
+                } finally {
+                    scanSyncBtn.disabled = false;
+                }
+            });
+            
+            // Upload Form
+            uploadForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                uploadBtn.disabled = true;
+                
+                const fileInput = document.getElementById("classFile");
+                const formData = new FormData();
+                formData.append("class_file", fileInput.files[0]);
+                
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/admin/upload-file`, {
+                        method: "POST",
+                        headers: {
+                            "X-Admin-Auth": adminToken
+                        },
+                        body: formData
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok && data.status === "success") {
+                        showToast(data.message, "success");
+                        fileInput.value = "";
+                        loadAdminData();
+                    } else {
+                        showToast(data.message || "Upload failed.", "error");
+                    }
+                } catch (err) {
+                    showToast("Error uploading file.", "error");
+                } finally {
+                    uploadBtn.disabled = false;
+                }
+            });
+            
+            // Trigger Updates
+            triggerUpdateBtn.addEventListener("click", async () => {
+                triggerUpdateBtn.disabled = true;
+                progressSection.classList.remove("d-none");
+                
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/admin/trigger-update`, {
+                        method: "POST",
+                        headers: {
+                            "X-Admin-Auth": adminToken
+                        }
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok && data.status === "success") {
+                        startPolling();
+                    } else {
+                        showToast(data.message || "Failed to trigger updates.", "error");
+                        triggerUpdateBtn.disabled = false;
+                        progressSection.classList.add("d-none");
+                    }
+                } catch (err) {
+                    showToast("Error triggering updates.", "error");
+                    triggerUpdateBtn.disabled = false;
+                    progressSection.classList.add("d-none");
+                }
+            });
+            
+            function startPolling() {
+                if (pollInterval) clearInterval(pollInterval);
+                
+                triggerUpdateBtn.disabled = true;
+                progressSection.classList.remove("d-none");
+                
+                pollInterval = setInterval(async () => {
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/api/admin/update-status`, {
+                            headers: {
+                                "X-Admin-Auth": adminToken
+                            }
+                        });
+                        const data = await response.json();
+                        
+                        if (response.ok && data.status === "success") {
+                            const status = data.update_status;
+                            if (status.in_progress) {
+                                const pct = status.total > 0 ? Math.round((status.processed / status.total) * 100) : 0;
+                                progressStudent.textContent = `Syncing: ${status.current_student || 'Initializing...'}`;
+                                progressPercent.textContent = `${pct}% (${status.processed}/${status.total})`;
+                                progressBar.style.width = `${pct}%`;
+                            } else {
+                                clearInterval(pollInterval);
+                                triggerUpdateBtn.disabled = false;
+                                progressSection.classList.add("d-none");
+                                progressBar.style.width = "0%";
+                                
+                                showToast("LeetCode profile updates completed successfully.", "success");
+                                loadAdminData();
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Status polling error:", err);
+                    }
+                }, 1500);
+            }
+            
+            // Initial load
+            loadAdminData();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Profile | LeetCode Class Tracker</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="light-theme">
+    
+    <!-- Navbar Container -->
+    <div id="navbar-container"></div>
+
+    <!-- Main Content -->
+    <div class="container my-4">
+        <!-- Loader -->
+        <div id="loader" class="text-center py-5">
+            <div class="spinner-border text-easy" role="status">
+                <span class="visually-hidden">Loading profile...</span>
+            </div>
+        </div>
+
+        <!-- Content (Hidden until loaded) -->
+        <div id="profileContent" style="display: none;">
+            <div class="row g-4 mb-4 animate-fade-in">
+                <!-- Student Header & Overview -->
+                <div class="col-12">
+                    <div class="card-glass p-4 border-opacity-20 d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                        <div class="d-flex align-items-center">
+                            <img id="studentAvatar" src="https://assets.leetcode.com/users/default_avatar.png" alt="Student Name" class="rounded-circle me-4 border border-secondary border-opacity-20" style="width: 80px; height: 80px; object-fit: cover;">
+                            <div>
+                                <h2 id="studentName" class="mb-1">-</h2>
+                                <p id="studentMeta" class="text-secondary-custom mb-2">-</p>
+                                <a id="studentLCLink" href="#" target="_blank" class="btn btn-sm btn-outline-easy fw-semibold rounded-pill px-3">
+                                    LeetCode Profile <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 mt-md-0 d-flex gap-4">
+                            <div class="text-center">
+                                <div class="fs-7 text-secondary-custom text-uppercase fw-semibold mb-1">Class Rank</div>
+                                <div id="studentRank" class="fs-3 fw-extrabold text-easy">-</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="fs-7 text-secondary-custom text-uppercase fw-semibold mb-1">Current Streak</div>
+                                <div id="studentStreak" class="fs-3 fw-extrabold text-warning">-</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="fs-7 text-secondary-custom text-uppercase fw-semibold mb-1">Contest Rating</div>
+                                <div id="studentRating" class="fs-3 fw-extrabold text-info">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <!-- Detail Cards (Left) -->
+                <div class="col-lg-4 animate-fade-in" style="animation-delay: 0.1s;">
+                    <div class="card-glass p-4 h-100">
+                        <h3 class="fs-5 mb-4"><i class="bi bi-pie-chart-fill text-easy me-2"></i>Solve Stats</h3>
+                        
+                        <div class="d-flex justify-content-between mb-3 border-bottom border-secondary border-opacity-10 pb-2">
+                            <span class="text-secondary-custom">Total Solved</span>
+                            <span id="statTotal" class="fw-bold fs-5 text-easy">0</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3 border-bottom border-secondary border-opacity-10 pb-2">
+                            <span class="text-secondary-custom">Easy Solved</span>
+                            <span id="statEasy" class="fw-bold text-easy">0</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3 border-bottom border-secondary border-opacity-10 pb-2">
+                            <span class="text-secondary-custom">Medium Solved</span>
+                            <span id="statMedium" class="fw-bold text-medium">0</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3 border-bottom border-secondary border-opacity-10 pb-2">
+                            <span class="text-secondary-custom">Hard Solved</span>
+                            <span id="statHard" class="fw-bold text-hard">0</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3 border-bottom border-secondary border-opacity-10 pb-2">
+                            <span class="text-secondary-custom">Acceptance %</span>
+                            <span id="statAcceptance" class="fw-bold font-monospace">0%</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3 border-bottom border-secondary border-opacity-10 pb-2">
+                            <span class="text-secondary-custom">Max Streak</span>
+                            <span id="statMaxStreak" class="fw-bold text-warning">0 days</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3 border-bottom border-secondary border-opacity-10 pb-2">
+                            <span class="text-secondary-custom">Solves Today</span>
+                            <span id="statToday" class="fw-bold text-warning">+0</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3 border-bottom border-secondary border-opacity-10 pb-2">
+                            <span class="text-secondary-custom">Weekly Solves</span>
+                            <span id="statWeekly" class="fw-bold text-info">+0</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3 border-bottom border-secondary border-opacity-10 pb-2">
+                            <span class="text-secondary-custom">Monthly Solves</span>
+                            <span id="statMonthly" class="fw-bold text-success">+0</span>
+                        </div>
+
+                        <!-- Problem Difficulty Chart (Bar) -->
+                        <h4 class="fs-6 mt-4 mb-3">Difficulty Breakdown</h4>
+                        <div class="progress rounded-pill mb-3" style="height: 16px;">
+                            <div id="breakdownEasy" class="progress-bar bg-easy" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" title="Easy"></div>
+                            <div id="breakdownMedium" class="progress-bar bg-medium" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" title="Medium"></div>
+                            <div id="breakdownHard" class="progress-bar bg-hard" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" title="Hard"></div>
+                        </div>
+                        <div class="d-flex justify-content-between fs-7 text-secondary-custom font-monospace">
+                            <span id="lblEasy">Easy: 0</span>
+                            <span id="lblMedium">Medium: 0</span>
+                            <span id="lblHard">Hard: 0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Progress Line Graph (Right) -->
+                <div class="col-lg-8 animate-fade-in" style="animation-delay: 0.2s;">
+                    <div class="card-glass p-4 h-100">
+                        <h3 class="fs-5 mb-4"><i class="bi bi-graph-up text-easy me-2"></i>Progress (Past 30 Days)</h3>
+                        <div style="height: 320px; position: relative;">
+                            <canvas id="progressChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Heatmap Calendar -->
+            <div class="row g-4 mb-4">
+                <div class="col-12 animate-fade-in" style="animation-delay: 0.3s;">
+                    <div class="card-glass p-4">
+                        <h3 class="fs-5 mb-3"><i class="bi bi-grid-3x3-gap-fill text-easy me-2"></i>LeetCode Activity Heatmap</h3>
+                        <div class="heatmap-container">
+                            <div class="heatmap-grid" id="heatmapGrid" style="grid-auto-flow: column;">
+                                <!-- Heatmap cells generated dynamically -->
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-3 fs-7 text-secondary-custom">
+                            <span id="heatmapSpan">-</span>
+                            <div class="d-flex align-items-center gap-1">
+                                <span>Less</span>
+                                <div class="heatmap-cell cell-empty" style="cursor: default;"></div>
+                                <div class="heatmap-cell cell-lvl1" style="cursor: default;"></div>
+                                <div class="heatmap-cell cell-lvl2" style="cursor: default;"></div>
+                                <div class="heatmap-cell cell-lvl3" style="cursor: default;"></div>
+                                <div class="heatmap-cell cell-lvl4" style="cursor: default;"></div>
+                                <span>More</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent 20 Submissions List -->
+            <div class="row g-4">
+                <div class="col-12 animate-fade-in" style="animation-delay: 0.4s;">
+                    <div class="card-glass p-4">
+                        <h3 class="fs-5 mb-4"><i class="bi bi-blockquote-left text-easy me-2"></i>Recent 20 Submissions</h3>
+                        <div class="table-responsive">
+                            <table class="table table-custom">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Title</th>
+                                        <th scope="col" class="text-center">Difficulty</th>
+                                        <th scope="col" class="text-center">Solved Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="submissionsBody">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Container -->
+    <div id="footer-container"></div>
+
+    <!-- Bootstrap 5 JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Config and Core scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/navbar.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const studentData = localStorage.getItem("current_student");
+            const adminToken = localStorage.getItem("admin_token");
+            if (!studentData && !adminToken) return; // Redirect handled by navbar.js
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            let targetId = urlParams.get("id");
+            
+            if (!targetId) {
+                const loggedInStudent = studentData ? JSON.parse(studentData) : null;
+                if (loggedInStudent) {
+                    targetId = loggedInStudent.id;
+                } else {
+                    // If admin page without explicit ID, redirect to leaderboard
+                    window.location.href = "leaderboard.html";
+                    return;
+                }
+            }
+            
+            const loader = document.getElementById("loader");
+            const profileContent = document.getElementById("profileContent");
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/student/${targetId}`);
+                const data = await response.json();
+                
+                if (response.ok && data.status === "success") {
+                    loader.style.display = "none";
+                    profileContent.style.display = "block";
+                    
+                    const st = data.student;
+                    
+                    // Render header details
+                    document.getElementById("studentAvatar").src = st.avatar_url || 'https://assets.leetcode.com/users/default_avatar.png';
+                    document.getElementById("studentName").textContent = st.name;
+                    document.getElementById("studentMeta").textContent = `@${st.leetcode_username} | Reg No: ${st.register_number} | Class: ${st.department} (${st.academic_year} Yr)`;
+                    document.getElementById("studentLCLink").href = `https://leetcode.com/${st.leetcode_username}`;
+                    document.getElementById("studentRank").textContent = `#${data.class_rank}`;
+                    document.getElementById("studentStreak").textContent = `${st.current_streak}🔥`;
+                    document.getElementById("studentRating").textContent = st.contest_rating > 0 ? Math.round(st.contest_rating) : '-';
+                    
+                    // Render stats
+                    document.getElementById("statTotal").textContent = st.total_solved;
+                    document.getElementById("statEasy").textContent = st.easy_solved;
+                    document.getElementById("statMedium").textContent = st.medium_solved;
+                    document.getElementById("statHard").textContent = st.hard_solved;
+                    document.getElementById("statAcceptance").textContent = `${st.acceptance_rate}%`;
+                    document.getElementById("statMaxStreak").textContent = `${st.max_streak} days`;
+                    document.getElementById("statToday").textContent = `+${data.today_solves}`;
+                    document.getElementById("statWeekly").textContent = `+${data.weekly_solves}`;
+                    document.getElementById("statMonthly").textContent = `+${data.monthly_solves}`;
+                    
+                    // Render difficulty breakdown bar
+                    const total = st.easy_solved + st.medium_solved + st.hard_solved;
+                    const easyPct = total > 0 ? (st.easy_solved / total * 100) : 0;
+                    const medPct = total > 0 ? (st.medium_solved / total * 100) : 0;
+                    const hardPct = total > 0 ? (st.hard_solved / total * 100) : 0;
+                    
+                    document.getElementById("breakdownEasy").style.width = `${easyPct}%`;
+                    document.getElementById("breakdownMedium").style.width = `${medPct}%`;
+                    document.getElementById("breakdownHard").style.width = `${hardPct}%`;
+                    
+                    document.getElementById("lblEasy").textContent = `Easy: ${st.easy_solved}`;
+                    document.getElementById("lblMedium").textContent = `Medium: ${st.medium_solved}`;
+                    document.getElementById("lblHard").textContent = `Hard: ${st.hard_solved}`;
+                    
+                    // Progress Line Chart
+                    const ctx = document.getElementById('progressChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: data.graph_dates,
+                            datasets: [{
+                                label: 'Total Problems Solved',
+                                data: data.graph_counts,
+                                fill: true,
+                                backgroundColor: 'rgba(0, 184, 169, 0.15)',
+                                borderColor: '#00b8a9',
+                                borderWidth: 3,
+                                pointBackgroundColor: '#00b8a9',
+                                pointBorderColor: '#fff',
+                                pointHoverBackgroundColor: '#fff',
+                                pointHoverBorderColor: '#00b8a9',
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                tension: 0.3
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    grid: {
+                                        color: 'rgba(0,0,0,0.05)'
+                                    },
+                                    ticks: {
+                                        color: '#64748b',
+                                        font: {
+                                            family: 'Outfit'
+                                        }
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        display: false
+                                    },
+                                    ticks: {
+                                        color: '#64748b',
+                                        font: {
+                                            family: 'Outfit'
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Render Activity Heatmap
+                    const heatmapGrid = document.getElementById("heatmapGrid");
+                    heatmapGrid.innerHTML = "";
+                    
+                    data.heatmap_days.forEach(day => {
+                        const cell = document.createElement("div");
+                        let cellClass = "cell-empty";
+                        const count = day.count;
+                        if (count > 0) {
+                            if (count <= 2) cellClass = "cell-lvl1";
+                            else if (count <= 5) cellClass = "cell-lvl2";
+                            else if (count <= 10) cellClass = "cell-lvl3";
+                            else cellClass = "cell-lvl4";
+                        }
+                        
+                        const dateObj = new Date(day.date);
+                        const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                        
+                        cell.className = `heatmap-cell ${cellClass}`;
+                        cell.setAttribute("data-tooltip", `${count} solves on ${dateStr}`);
+                        heatmapGrid.appendChild(cell);
+                    });
+                    
+                    // Format Heatmap Date Span
+                    const startD = new Date(data.heatmap_start_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                    const endD = new Date(data.heatmap_end_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                    document.getElementById("heatmapSpan").textContent = `${startD} → ${endD}`;
+                    
+                    // Populate Recent Submissions
+                    const subsBody = document.getElementById("submissionsBody");
+                    subsBody.innerHTML = "";
+                    if (data.submissions && data.submissions.length > 0) {
+                        data.submissions.forEach(sub => {
+                            let diffClass = "medium";
+                            if (sub.difficulty === "Easy") diffClass = "easy";
+                            else if (sub.difficulty === "Hard") diffClass = "hard";
+                            
+                            const tr = document.createElement("tr");
+                            tr.innerHTML = `
+                                <td class="fw-bold">
+                                    <a href="https://leetcode.com/problems/${sub.title_slug}" target="_blank" class="text-decoration-none text-reset">
+                                        ${sub.title} <i class="bi bi-box-arrow-up-right text-secondary-custom fs-7"></i>
+                                    </a>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge-difficulty bg-${diffClass} text-dark">
+                                        ${sub.difficulty}
+                                    </span>
+                                </td>
+                                <td class="text-center text-secondary-custom">${sub.time_ago}</td>
+                            `;
+                            subsBody.appendChild(tr);
+                        });
+                    } else {
+                        subsBody.innerHTML = `
+                            <tr>
+                                <td colspan="3" class="text-center text-secondary-custom py-4">
+                                    No submissions tracked for this student.
+                                </td>
+                            </tr>
+                        `;
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+                loader.innerHTML = `
+                    <div class="alert alert-danger max-width-md mx-auto" role="alert">
+                        <i class="bi bi-exclamation-octagon-fill me-2 fs-5"></i>
+                        Failed to retrieve student profile statistics.
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

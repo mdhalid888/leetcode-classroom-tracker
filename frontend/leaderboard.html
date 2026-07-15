@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard | LeetCode Class Tracker</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="light-theme">
+    
+    <!-- Navbar Container -->
+    <div id="navbar-container"></div>
+
+    <!-- Main Content -->
+    <div class="container my-4">
+        <div class="card-glass p-4 animate-fade-in">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+                <div>
+                    <h2 class="mb-1 fs-3"><i class="bi bi-trophy-fill text-warning me-2"></i>Classroom Leaderboard</h2>
+                    <p class="text-secondary-custom mb-0">Rankings updated automatically. Filter below to view specific metrics.</p>
+                </div>
+            </div>
+
+            <!-- Dropdown Filters (Department & Year) -->
+            <div class="d-flex flex-wrap gap-2 align-items-center mb-4">
+                <div class="d-flex align-items-center gap-1 me-2">
+                    <span class="fs-7 fw-semibold text-secondary-custom"><i class="bi bi-funnel-fill text-easy me-1"></i>Filters:</span>
+                </div>
+
+                <div class="d-flex align-items-center gap-1 me-2">
+                    <label for="deptSelect" class="fs-7 fw-semibold text-secondary-custom mb-0">Dept:</label>
+                    <select id="deptSelect" class="form-select form-select-custom rounded-pill px-3 py-1 fs-7" style="width: auto; min-width: 100px;">
+                        <option value="ALL">All</option>
+                        <option value="CSE">CSE</option>
+                        <option value="IT">IT</option>
+                        <option value="CCE">CCE</option>
+                        <option value="AI ML">AI ML</option>
+                        <option value="CYBER">CYBER</option>
+                    </select>
+                </div>
+
+                <div class="d-flex align-items-center gap-1 me-3">
+                    <label for="yearSelect" class="fs-7 fw-semibold text-secondary-custom mb-0">Year:</label>
+                    <select id="yearSelect" class="form-select form-select-custom rounded-pill px-3 py-1 fs-7" style="width: auto; min-width: 100px;">
+                        <option value="ALL">All</option>
+                        <option value="4">4th Yr</option>
+                        <option value="3">3rd Yr</option>
+                        <option value="2">2nd Yr</option>
+                    </select>
+                </div>
+
+                <button id="applyFiltersBtn" class="btn btn-sm btn-easy text-dark fw-bold rounded-pill px-4">Apply</button>
+            </div>
+
+            <!-- Sorting Metric Tabs -->
+            <div class="mb-4 overflow-x-auto">
+                <div class="d-flex flex-nowrap gap-2 pb-2" id="sortingTabs">
+                    <button class="btn-filter active" data-filter="overall">Overall</button>
+                    <button class="btn-filter inactive" data-filter="today">Today</button>
+                    <button class="btn-filter inactive" data-filter="week">This Week</button>
+                    <button class="btn-filter inactive" data-filter="month">This Month</button>
+                    <button class="btn-filter inactive" data-filter="easy">Easy</button>
+                    <button class="btn-filter inactive" data-filter="medium">Medium</button>
+                    <button class="btn-filter inactive" data-filter="hard">Hard</button>
+                    <button class="btn-filter inactive" data-filter="streak">Streak</button>
+                    <button class="btn-filter inactive" data-filter="rating">Contest Rating</button>
+                </div>
+            </div>
+
+            <!-- Loader inside table -->
+            <div id="tableLoader" class="text-center py-5">
+                <div class="spinner-border text-easy" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-secondary-custom mt-2">Loading ranks...</p>
+            </div>
+
+            <!-- Leaderboard Table -->
+            <div class="table-responsive" id="leaderboardTableWrapper" style="display: none;">
+                <table class="table table-custom">
+                    <thead>
+                        <tr>
+                            <th scope="col" style="width: 70px;">Rank</th>
+                            <th scope="col">Name / Reg No</th>
+                            <th scope="col" class="text-center">Total</th>
+                            <th scope="col" class="text-center">Easy</th>
+                            <th scope="col" class="text-center">Medium</th>
+                            <th scope="col" class="text-center">Hard</th>
+                            <th scope="col" class="text-center">Acceptance</th>
+                            <th scope="col" class="text-center">Streak</th>
+                            <th scope="col" class="text-center">Contest Rating</th>
+                            <th scope="col" class="text-center">Last Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboardBody">
+                        <!-- Rendered dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Container -->
+    <div id="footer-container"></div>
+
+    <!-- Bootstrap 5 JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Config and Core scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/navbar.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const studentData = localStorage.getItem("current_student");
+            const adminToken = localStorage.getItem("admin_token");
+            if (!studentData && !adminToken) return; // Redirect handled by navbar.js
+            
+            const student = studentData ? JSON.parse(studentData) : null;
+            const studentId = student ? student.id : '';
+            
+            let activeFilter = "overall";
+            const deptSelect = document.getElementById("deptSelect");
+            const yearSelect = document.getElementById("yearSelect");
+            const applyBtn = document.getElementById("applyFiltersBtn");
+            const tableLoader = document.getElementById("tableLoader");
+            const tableWrapper = document.getElementById("leaderboardTableWrapper");
+            const leaderboardBody = document.getElementById("leaderboardBody");
+            
+            // Set initial defaults from student profile
+            if (student) {
+                deptSelect.value = student.department;
+                yearSelect.value = student.academic_year;
+            }
+            
+            async function loadLeaderboard() {
+                tableLoader.style.display = "block";
+                tableWrapper.style.display = "none";
+                
+                const dept = deptSelect.value;
+                const year = yearSelect.value;
+                
+                try {
+                    const url = `${API_BASE_URL}/api/leaderboard?student_id=${studentId}&dept=${dept}&year=${year}&filter=${activeFilter}`;
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    
+                    if (response.ok && data.status === "success") {
+                        tableLoader.style.display = "none";
+                        tableWrapper.style.display = "block";
+                        
+                        // Set selected dropdowns to what was loaded
+                        deptSelect.value = data.active_dept;
+                        yearSelect.value = data.active_year;
+                        
+                        leaderboardBody.innerHTML = "";
+                        if (data.students && data.students.length > 0) {
+                            data.students.forEach((s, idx) => {
+                                let rankBadge = `#${idx + 1}`;
+                                if (idx === 0) rankBadge = "🥇";
+                                else if (idx === 1) rankBadge = "🥈";
+                                else if (idx === 2) rankBadge = "🥉";
+                                
+                                const avatar = s.avatar_url || 'https://assets.leetcode.com/users/default_avatar.png';
+                                const contestRatingVal = s.contest_rating > 0 ? Math.round(s.contest_rating) : '-';
+                                
+                                const tr = document.createElement("tr");
+                                tr.innerHTML = `
+                                    <td class="fw-bold fs-5 text-secondary-custom">${rankBadge}</td>
+                                    <td>
+                                        <a href="student.html?id=${s.id}" class="fw-bold text-decoration-none text-reset d-flex align-items-center">
+                                            <img src="${avatar}" alt="${s.name}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                                            <div>
+                                                <div class="fs-6">${s.name}</div>
+                                                <div class="fs-7 text-secondary-custom fw-normal">@${s.leetcode_username} | ${s.register_number}</div>
+                                            </div>
+                                        </a>
+                                    </td>
+                                    <td class="text-center fw-extrabold fs-6 text-easy">${s.total_solved}</td>
+                                    <td class="text-center font-monospace text-easy fs-7">${s.easy_solved}</td>
+                                    <td class="text-center font-monospace text-medium fs-7">${s.medium_solved}</td>
+                                    <td class="text-center font-monospace text-hard fs-7">${s.hard_solved}</td>
+                                    <td class="text-center font-monospace fs-7">${s.acceptance_rate}%</td>
+                                    <td class="text-center font-monospace fs-7">${s.current_streak > 0 ? `${s.current_streak}🔥` : '0'}</td>
+                                    <td class="text-center font-monospace fs-7 fw-bold text-info">${contestRatingVal}</td>
+                                    <td class="text-center fs-7 text-secondary-custom">${s.time_ago}</td>
+                                `;
+                                leaderboardBody.appendChild(tr);
+                            });
+                        } else {
+                            leaderboardBody.innerHTML = `
+                                <tr>
+                                    <td colspan="10" class="text-center text-secondary-custom py-5">
+                                        <i class="bi bi-emoji-neutral display-6 mb-3"></i>
+                                        <p>No students found for this class.</p>
+                                    </td>
+                                </tr>
+                            `;
+                        }
+                    }
+                } catch (err) {
+                    console.error(err);
+                    tableLoader.innerHTML = `
+                        <div class="alert alert-danger max-width-md mx-auto" role="alert">
+                            <i class="bi bi-exclamation-octagon-fill me-2 fs-5"></i>
+                            Failed to load leaderboard data.
+                        </div>
+                    `;
+                }
+            }
+            
+            // Tab clicks
+            const tabs = document.querySelectorAll("#sortingTabs .btn-filter");
+            tabs.forEach(tab => {
+                tab.addEventListener("click", () => {
+                    tabs.forEach(t => {
+                        t.className = "btn-filter inactive";
+                    });
+                    tab.className = "btn-filter active";
+                    activeFilter = tab.getAttribute("data-filter");
+                    loadLeaderboard();
+                });
+            });
+            
+            applyBtn.addEventListener("click", loadLeaderboard);
+            
+            // Load initially
+            loadLeaderboard();
+        });
+    </script>
+</body>
+</html>

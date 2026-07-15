@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compare | LeetCode Class Tracker</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="light-theme">
+    
+    <!-- Navbar Container -->
+    <div id="navbar-container"></div>
+
+    <!-- Main Content -->
+    <div class="container my-4">
+        <!-- Compare Selection Card -->
+        <div class="card-glass p-4 mb-4">
+            <h2 class="mb-1 fs-3"><i class="bi bi-arrow-left-right text-easy me-2"></i>Classmate Comparison</h2>
+            <p class="text-secondary-custom mb-4">Select any two students from your class to compare LeetCode metrics and solving strengths side-by-side.</p>
+            
+            <!-- Compare Selection Form -->
+            <form id="compareForm" class="row g-3 align-items-end">
+                <!-- Filters -->
+                <div class="col-md-3">
+                    <label for="deptSelect" class="form-label fw-semibold text-secondary-custom fs-7">Filter Dept</label>
+                    <select id="deptSelect" class="form-select bg-dark text-light border-secondary border-opacity-35 rounded-3 py-2">
+                        <option value="ALL">All Departments</option>
+                        <option value="CSE">CSE</option>
+                        <option value="IT">IT</option>
+                        <option value="CCE">CCE</option>
+                        <option value="AI ML">AI ML</option>
+                        <option value="CYBER">CYBER</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="yearSelect" class="form-label fw-semibold text-secondary-custom fs-7">Filter Year</label>
+                    <select id="yearSelect" class="form-select bg-dark text-light border-secondary border-opacity-35 rounded-3 py-2">
+                        <option value="ALL">All Years</option>
+                        <option value="4">4th Year</option>
+                        <option value="3">3rd Year</option>
+                        <option value="2">2nd Year</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-6 d-none d-md-block"></div> <!-- Spacer -->
+
+                <div class="col-md-5 mt-3">
+                    <label for="s1" class="form-label fw-semibold text-secondary-custom">Student A</label>
+                    <select id="s1" class="form-select bg-dark text-light border-secondary border-opacity-35 rounded-3 py-2" required>
+                        <option value="">-- Select Student --</option>
+                        <!-- Rendered dynamically -->
+                    </select>
+                </div>
+                
+                <div class="col-md-2 text-center mb-2 d-none d-md-block">
+                    <span class="fs-4 fw-extrabold text-secondary-custom">VS</span>
+                </div>
+                
+                <div class="col-md-5 mt-3">
+                    <label for="s2" class="form-label fw-semibold text-secondary-custom">Student B</label>
+                    <select id="s2" class="form-select bg-dark text-light border-secondary border-opacity-35 rounded-3 py-2" required>
+                        <option value="">-- Select Student --</option>
+                        <!-- Rendered dynamically -->
+                    </select>
+                </div>
+                
+                <div class="col-12 text-center mt-4">
+                    <button type="submit" class="btn btn-easy text-dark fw-bold rounded-pill px-5 py-2">
+                        Compare Students <i class="bi bi-bar-chart-fill ms-1"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Loader -->
+        <div id="loader" class="text-center py-5" style="display: none;">
+            <div class="spinner-border text-easy" role="status">
+                <span class="visually-hidden">Loading comparison...</span>
+            </div>
+        </div>
+
+        <!-- Comparison Result block -->
+        <div id="compareResults" class="row g-4 animate-fade-in" style="display: none;">
+            <!-- Comparison Table (Left) -->
+            <div class="col-lg-7">
+                <div class="card-glass p-4 h-100">
+                    <h3 class="fs-5 mb-4 text-center text-md-start"><i class="bi bi-table text-easy me-2"></i>Side-by-Side Analysis</h3>
+                    
+                    <div class="table-responsive">
+                        <table class="table text-center align-middle" style="border-collapse: separate; border-spacing: 0 10px;">
+                            <thead>
+                                <tr class="text-secondary-custom uppercase fs-7 fw-semibold border-bottom">
+                                    <th style="width: 35%; text-align: left;">Metric</th>
+                                    <th style="width: 32.5%;" id="s1HeaderName" class="text-easy">-</th>
+                                    <th style="width: 32.5%;" id="s2HeaderName" class="text-danger">-</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Avatars -->
+                                <tr>
+                                    <td style="text-align: left;" class="fw-bold">Profile</td>
+                                    <td>
+                                        <img id="s1Avatar" src="https://assets.leetcode.com/users/default_avatar.png" alt="Student A" class="rounded-circle border border-easy border-2 mb-2" style="width: 60px; height: 60px; object-fit: cover;">
+                                        <div id="s1Username" class="fs-7 text-secondary-custom">@username</div>
+                                    </td>
+                                    <td>
+                                        <img id="s2Avatar" src="https://assets.leetcode.com/users/default_avatar.png" alt="Student B" class="rounded-circle border border-danger border-2 mb-2" style="width: 60px; height: 60px; object-fit: cover;">
+                                        <div id="s2Username" class="fs-7 text-secondary-custom">@username</div>
+                                    </td>
+                                </tr>
+                                <!-- Total Solved -->
+                                <tr class="border-top">
+                                    <td style="text-align: left;" class="fw-semibold text-secondary-custom">Total Solved</td>
+                                    <td id="s1TotalSolved" class="fw-extrabold fs-5 text-easy">0</td>
+                                    <td id="s2TotalSolved" class="fw-extrabold fs-5 text-danger">0</td>
+                                </tr>
+                                <!-- Easy -->
+                                <tr>
+                                    <td style="text-align: left;" class="fw-semibold text-secondary-custom">Easy Solved</td>
+                                    <td id="s1EasySolved" class="fw-bold text-easy">0</td>
+                                    <td id="s2EasySolved" class="fw-bold text-easy">0</td>
+                                </tr>
+                                <!-- Medium -->
+                                <tr>
+                                    <td style="text-align: left;" class="fw-semibold text-secondary-custom">Medium Solved</td>
+                                    <td id="s1MediumSolved" class="fw-bold text-medium">0</td>
+                                    <td id="s2MediumSolved" class="fw-bold text-medium">0</td>
+                                </tr>
+                                <!-- Hard -->
+                                <tr>
+                                    <td style="text-align: left;" class="fw-semibold text-secondary-custom">Hard Solved</td>
+                                    <td id="s1HardSolved" class="fw-bold text-hard">0</td>
+                                    <td id="s2HardSolved" class="fw-bold text-hard">0</td>
+                                </tr>
+                                <!-- Acceptance -->
+                                <tr>
+                                    <td style="text-align: left;" class="fw-semibold text-secondary-custom">Acceptance Rate</td>
+                                    <td id="s1Acceptance" class="font-monospace fw-semibold">0%</td>
+                                    <td id="s2Acceptance" class="font-monospace fw-semibold">0%</td>
+                                </tr>
+                                <!-- Current Streak -->
+                                <tr>
+                                    <td style="text-align: left;" class="fw-semibold text-secondary-custom">Current Streak</td>
+                                    <td id="s1CurrentStreak" class="fw-bold text-warning">0🔥</td>
+                                    <td id="s2CurrentStreak" class="fw-bold text-warning">0🔥</td>
+                                </tr>
+                                <!-- Longest Streak -->
+                                <tr>
+                                    <td style="text-align: left;" class="fw-semibold text-secondary-custom">Longest Streak</td>
+                                    <td id="s1MaxStreak" class="fw-bold text-warning">0 days</td>
+                                    <td id="s2MaxStreak" class="fw-bold text-warning">0 days</td>
+                                </tr>
+                                <!-- Contest Rating -->
+                                <tr class="border-bottom">
+                                    <td style="text-align: left;" class="fw-semibold text-secondary-custom">Contest Rating</td>
+                                    <td id="s1ContestRating" class="font-monospace fw-bold text-info">-</td>
+                                    <td id="s2ContestRating" class="font-monospace fw-bold text-info">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Radar Chart (Right) -->
+            <div class="col-lg-5">
+                <div class="card-glass p-4 h-100 d-flex flex-column justify-content-between">
+                    <h3 class="fs-5 mb-4 text-center"><i class="bi bi-compass-fill text-easy me-2"></i>Visual Comparison</h3>
+                    <div class="chart-container-radar flex-grow-1 d-flex align-items-center justify-content-center" style="position: relative; height: 350px; width: 100%;">
+                        <canvas id="compareChart"></canvas>
+                    </div>
+                    <div class="fs-8 text-secondary-custom text-center mt-3">
+                        <i class="bi bi-info-circle me-1"></i> Contest Rating is scaled (value / 10) for overlay proportions.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Container -->
+    <div id="footer-container"></div>
+
+    <!-- Bootstrap 5 JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Config and Core scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/navbar.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const studentData = localStorage.getItem("current_student");
+            const adminToken = localStorage.getItem("admin_token");
+            if (!studentData && !adminToken) return; // Redirect handled by navbar.js
+            
+            const student = studentData ? JSON.parse(studentData) : null;
+            const studentId = student ? student.id : '';
+            
+            const deptSelect = document.getElementById("deptSelect");
+            const yearSelect = document.getElementById("yearSelect");
+            const s1Select = document.getElementById("s1");
+            const s2Select = document.getElementById("s2");
+            const form = document.getElementById("compareForm");
+            const loader = document.getElementById("loader");
+            const results = document.getElementById("compareResults");
+            
+            let compareChartInstance = null;
+            
+            // Set initial defaults
+            if (student) {
+                deptSelect.value = student.department;
+                yearSelect.value = student.academic_year;
+            }
+            
+            async function updateStudentDropdowns() {
+                const dept = deptSelect.value;
+                const year = yearSelect.value;
+                
+                // Keep selected values if any
+                const selectedS1 = s1Select.value;
+                const selectedS2 = s2Select.value;
+                
+                try {
+                    const url = `${API_BASE_URL}/api/compare?student_id=${studentId}&dept=${dept}&year=${year}&s1=${selectedS1}&s2=${selectedS2}`;
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    
+                    if (response.ok && data.status === "success") {
+                        // Populate select options
+                        s1Select.innerHTML = '<option value="">-- Select Student --</option>';
+                        s2Select.innerHTML = '<option value="">-- Select Student --</option>';
+                        
+                        data.all_students.forEach(st => {
+                            const option1 = document.createElement("option");
+                            option1.value = st.id;
+                            option1.textContent = `${st.name} (${st.leetcode_username})`;
+                            if (selectedS1 == st.id) option1.selected = true;
+                            s1Select.appendChild(option1);
+                            
+                            const option2 = document.createElement("option");
+                            option2.value = st.id;
+                            option2.textContent = `${st.name} (${st.leetcode_username})`;
+                            if (selectedS2 == st.id) option2.selected = true;
+                            s2Select.appendChild(option2);
+                        });
+                    }
+                } catch (err) {
+                    console.error("Failed to load students list", err);
+                }
+            }
+            
+            deptSelect.addEventListener("change", updateStudentDropdowns);
+            yearSelect.addEventListener("change", updateStudentDropdowns);
+            
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                results.style.display = "none";
+                loader.style.display = "block";
+                
+                const s1 = s1Select.value;
+                const s2 = s2Select.value;
+                
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/compare?s1=${s1}&s2=${s2}`);
+                    const data = await response.json();
+                    
+                    if (response.ok && data.status === "success") {
+                        loader.style.display = "none";
+                        results.style.display = "flex";
+                        
+                        const stud1 = data.s1;
+                        const stud2 = data.s2;
+                        
+                        // Populate Side-by-Side Analysis
+                        document.getElementById("s1HeaderName").textContent = stud1.name;
+                        document.getElementById("s2HeaderName").textContent = stud2.name;
+                        
+                        document.getElementById("s1Avatar").src = stud1.avatar_url || 'https://assets.leetcode.com/users/default_avatar.png';
+                        document.getElementById("s1Username").textContent = `@${stud1.leetcode_username}`;
+                        
+                        document.getElementById("s2Avatar").src = stud2.avatar_url || 'https://assets.leetcode.com/users/default_avatar.png';
+                        document.getElementById("s2Username").textContent = `@${stud2.leetcode_username}`;
+                        
+                        document.getElementById("s1TotalSolved").textContent = stud1.total_solved;
+                        document.getElementById("s2TotalSolved").textContent = stud2.total_solved;
+                        
+                        document.getElementById("s1EasySolved").textContent = stud1.easy_solved;
+                        document.getElementById("s2EasySolved").textContent = stud2.easy_solved;
+                        
+                        document.getElementById("s1MediumSolved").textContent = stud1.medium_solved;
+                        document.getElementById("s2MediumSolved").textContent = stud2.medium_solved;
+                        
+                        document.getElementById("s1HardSolved").textContent = stud1.hard_solved;
+                        document.getElementById("s2HardSolved").textContent = stud2.hard_solved;
+                        
+                        document.getElementById("s1Acceptance").textContent = `${stud1.acceptance_rate}%`;
+                        document.getElementById("s2Acceptance").textContent = `${stud2.acceptance_rate}%`;
+                        
+                        document.getElementById("s1CurrentStreak").textContent = `${stud1.current_streak}🔥`;
+                        document.getElementById("s2CurrentStreak").textContent = `${stud2.current_streak}🔥`;
+                        
+                        document.getElementById("s1MaxStreak").textContent = `${stud1.max_streak} days`;
+                        document.getElementById("s2MaxStreak").textContent = `${stud2.max_streak} days`;
+                        
+                        document.getElementById("s1ContestRating").textContent = stud1.contest_rating > 0 ? Math.round(stud1.contest_rating) : '-';
+                        document.getElementById("s2ContestRating").textContent = stud2.contest_rating > 0 ? Math.round(stud2.contest_rating) : '-';
+                        
+                        // Render Radar Chart
+                        const ctx = document.getElementById('compareChart').getContext('2d');
+                        
+                        const stats1 = [
+                            stud1.total_solved,
+                            stud1.easy_solved,
+                            stud1.medium_solved,
+                            stud1.hard_solved,
+                            stud1.acceptance_rate,
+                            stud1.current_streak,
+                            Math.floor(stud1.contest_rating / 10)
+                        ];
+                        
+                        const stats2 = [
+                            stud2.total_solved,
+                            stud2.easy_solved,
+                            stud2.medium_solved,
+                            stud2.hard_solved,
+                            stud2.acceptance_rate,
+                            stud2.current_streak,
+                            Math.floor(stud2.contest_rating / 10)
+                        ];
+                        
+                        if (compareChartInstance) {
+                            compareChartInstance.destroy();
+                        }
+                        
+                        compareChartInstance = new Chart(ctx, {
+                            type: 'radar',
+                            data: {
+                                labels: ['Total Solved', 'Easy', 'Medium', 'Hard', 'Acceptance %', 'Streak', 'Rating / 10'],
+                                datasets: [
+                                    {
+                                        label: stud1.name,
+                                        data: stats1,
+                                        backgroundColor: 'rgba(0, 184, 169, 0.2)',
+                                        borderColor: '#00b8a9',
+                                        pointBackgroundColor: '#00b8a9',
+                                        pointBorderColor: '#fff',
+                                        pointHoverBackgroundColor: '#fff',
+                                        pointHoverBorderColor: '#00b8a9'
+                                    },
+                                    {
+                                        label: stud2.name,
+                                        data: stats2,
+                                        backgroundColor: 'rgba(255, 46, 99, 0.2)',
+                                        borderColor: '#ff2e63',
+                                        pointBackgroundColor: '#ff2e63',
+                                        pointBorderColor: '#fff',
+                                        pointHoverBackgroundColor: '#fff',
+                                        pointHoverBorderColor: '#ff2e63'
+                                    }
+                                ]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    r: {
+                                        angleLines: {
+                                            color: 'rgba(0,0,0,0.1)'
+                                        },
+                                        grid: {
+                                            color: 'rgba(0,0,0,0.1)'
+                                        },
+                                        pointLabels: {
+                                            font: {
+                                                family: 'Outfit',
+                                                size: 11,
+                                                weight: '600'
+                                            },
+                                            color: '#64748b'
+                                        },
+                                        ticks: {
+                                            backdropColor: 'transparent',
+                                            color: '#64748b'
+                                        }
+                                    }
+                                },
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom',
+                                        labels: {
+                                            font: {
+                                                family: 'Outfit',
+                                                size: 12,
+                                                weight: '600'
+                                            },
+                                            color: '#1e293b'
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                } catch (err) {
+                    console.error(err);
+                    loader.style.display = "none";
+                    alert("Failed to fetch comparison details.");
+                }
+            });
+            
+            // Initial load
+            updateStudentDropdowns();
+        });
+    </script>
+</body>
+</html>

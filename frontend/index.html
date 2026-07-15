@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | LeetCode Class Tracker</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="light-theme">
+    
+    <!-- Navbar Container -->
+    <div id="navbar-container"></div>
+
+    <!-- Main Content -->
+    <div class="container my-4">
+        <!-- Loader -->
+        <div id="loader" class="text-center py-5">
+            <div class="spinner-border text-easy" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="text-secondary-custom mt-2">Loading classroom statistics dashboard...</p>
+        </div>
+
+        <!-- Dashboard Content (hidden until loaded) -->
+        <div id="dashboard-content" style="display: none;">
+            <div class="row g-4 mb-4 animate-fade-in">
+                <!-- Stats Cards -->
+                <div class="col-md-4">
+                    <div class="card-glass p-4 text-center h-100 d-flex flex-column justify-content-center">
+                        <span class="fs-6 fw-semibold text-secondary-custom text-uppercase mb-2">Classroom</span>
+                        <span id="classLabel" class="display-5 fw-extrabold text-easy">-</span>
+                        <span class="fs-7 text-secondary-custom mt-2"><i class="bi bi-mortarboard-fill"></i> Mapped class database</span>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card-glass p-4 text-center h-100 d-flex flex-column justify-content-center">
+                        <span class="fs-6 fw-semibold text-secondary-custom text-uppercase mb-2">Today's Solves</span>
+                        <span id="todaySolvesVal" class="display-4 fw-extrabold text-warning">0</span>
+                        <span class="fs-7 text-secondary-custom mt-2"><i class="bi bi-graph-up-arrow"></i> Problems solved today</span>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card-glass p-4 text-center h-100 d-flex flex-column justify-content-center">
+                        <span class="fs-6 fw-semibold text-secondary-custom text-uppercase mb-2">Total Solves</span>
+                        <span id="totalSolvesVal" class="display-4 fw-extrabold text-info">0</span>
+                        <span class="fs-7 text-secondary-custom mt-2"><i class="bi bi-database-check"></i> Classroom aggregate</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Main Dashboard Body (Left Col) -->
+                <div class="col-lg-8 animate-fade-in" style="animation-delay: 0.1s;">
+                    <!-- Top Leaderboard Snippet -->
+                    <div class="card-glass p-4 mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3 class="mb-0 fs-4"><i class="bi bi-award-fill text-warning me-2"></i>Top Classroom Solvers</h3>
+                            <a href="leaderboard.html" class="btn btn-sm btn-outline-easy fw-semibold rounded-pill px-3">
+                                View All <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-custom">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" style="width: 80px;">Rank</th>
+                                        <th scope="col">Name</th>
+                                        <th scope="col" class="text-center">Total Solved</th>
+                                        <th scope="col" class="text-center">Today</th>
+                                        <th scope="col" class="text-center">Streak</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="topSolversBody">
+                                    <!-- Rendered dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Weekly Report block -->
+                    <div id="weeklyReportCard" class="card-glass p-4 mb-4" style="display: none;">
+                        <h3 class="mb-4 fs-4"><i class="bi bi-calendar-event-fill text-info me-2"></i>Weekly Classroom Summary</h3>
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="p-3 border border-secondary border-opacity-10 rounded-3">
+                                    <div class="fs-7 text-secondary-custom mb-1"><i class="bi bi-trophy text-warning"></i> Top Solver</div>
+                                    <div id="weeklyTopSolver" class="fs-6 fw-bold">-</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="p-3 border border-secondary border-opacity-10 rounded-3">
+                                    <div class="fs-7 text-secondary-custom mb-1"><i class="bi bi-graph-up text-easy"></i> Most Active</div>
+                                    <div id="weeklyMostActive" class="fs-6 fw-bold">-</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="p-3 border border-secondary border-opacity-10 rounded-3">
+                                    <div class="fs-7 text-secondary-custom mb-1"><i class="bi bi-star-fill text-info"></i> Top Improvement</div>
+                                    <div id="weeklyTopImprovement" class="fs-6 fw-bold">-</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="p-3 border border-secondary border-opacity-10 rounded-3">
+                                    <div class="fs-7 text-secondary-custom mb-1"><i class="bi bi-calculator text-success"></i> Solves Average</div>
+                                    <div id="weeklySolvesAvg" class="fs-6 fw-bold">-</div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="p-3 border border-secondary border-opacity-10 rounded-3">
+                                    <div class="fs-7 text-secondary-custom mb-1"><i class="bi bi-slash-circle text-danger"></i> Inactive Members this Week</div>
+                                    <div id="weeklyInactiveMembers" class="fs-7 text-danger fw-semibold">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity Feed -->
+                    <div class="card-glass p-4">
+                        <h3 class="mb-4 fs-4"><i class="bi bi-activity text-easy me-2"></i>Recent Activity Feed</h3>
+                        <div id="recentActivityFeed" class="pe-2" style="max-height: 450px; overflow-y: auto;">
+                            <!-- Rendered dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar Info Panel (Right Col) -->
+                <div class="col-lg-4 animate-fade-in" style="animation-delay: 0.2s;">
+                    <!-- Daily Challenge Card -->
+                    <div class="card-glass p-4 mb-4 text-center border-warning border-opacity-20">
+                        <span class="fs-7 badge bg-warning text-dark mb-3 px-3 py-2 rounded-pill fw-bold text-uppercase tracking-wider">
+                            <i class="bi bi-lightning-charge-fill"></i> LeetCode Daily Challenge
+                        </span>
+                        <div id="challengeDetails">
+                            <h4 id="challengeTitle" class="mb-2">-</h4>
+                            <div class="mb-3">
+                                <span id="challengeDifficulty" class="badge text-dark">-</span>
+                            </div>
+                            
+                            <a id="challengeLink" href="#" target="_blank" class="btn btn-easy text-dark fw-bold rounded-pill w-100 mb-3">
+                                Solve Challenge <i class="bi bi-box-arrow-up-right ms-1"></i>
+                            </a>
+                            
+                            <div class="fs-7 text-secondary-custom">
+                                Class Completion: <span id="challengeCompletion" class="text-easy fw-bold">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notification Feed -->
+                    <div class="card-glass p-4">
+                        <h3 class="mb-3 fs-5"><i class="bi bi-bell-fill text-warning me-2"></i>Milestones & Logs</h3>
+                        <div id="milestonesFeed" class="pe-2" style="max-height: 400px; overflow-y: auto;">
+                            <!-- Rendered dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Container -->
+    <div id="footer-container"></div>
+
+    <!-- Bootstrap 5 JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Config and Core scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/navbar.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const studentData = localStorage.getItem("current_student");
+            if (!studentData && !localStorage.getItem("admin_token")) return; // Redirect handled by navbar.js
+            
+            const student = studentData ? JSON.parse(studentData) : null;
+            const studentId = student ? student.id : '';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/dashboard?student_id=${studentId}`);
+                const data = await response.json();
+                
+                if (response.ok && data.status === "success") {
+                    // Hide loader and show content
+                    document.getElementById("loader").style.display = "none";
+                    document.getElementById("dashboard-content").style.display = "block";
+                    
+                    // Render aggregates
+                    const dept = data.student.department;
+                    const year = data.student.academic_year;
+                    let yearSuffix = "th";
+                    if (year === 2) yearSuffix = "nd";
+                    else if (year === 3) yearSuffix = "rd";
+                    
+                    document.getElementById("classLabel").textContent = `${dept} - ${year}${yearSuffix} Yr`;
+                    document.getElementById("todaySolvesVal").textContent = data.today_solves;
+                    document.getElementById("totalSolvesVal").textContent = data.total_solves;
+                    
+                    // Render Top Solvers
+                    const solversBody = document.getElementById("topSolversBody");
+                    solversBody.innerHTML = "";
+                    if (data.top_students && data.top_students.length > 0) {
+                        data.top_students.forEach((s, idx) => {
+                            let medal = `#${idx + 1}`;
+                            if (idx === 0) medal = "🥇";
+                            else if (idx === 1) medal = "🥈";
+                            else if (idx === 2) medal = "🥉";
+                            
+                            const avatar = s.avatar_url || 'https://assets.leetcode.com/users/default_avatar.png';
+                            
+                            const tr = document.createElement("tr");
+                            tr.innerHTML = `
+                                <td class="fw-bold fs-5 text-secondary-custom">${medal}</td>
+                                <td>
+                                    <a href="student.html?id=${s.id}" class="fw-bold text-decoration-none text-reset d-flex align-items-center">
+                                        <img src="${avatar}" alt="${s.name}" class="rounded-circle me-3" style="width: 32px; height: 32px; object-fit: cover;">
+                                        <div>
+                                            <div class="fs-6">${s.name}</div>
+                                            <div class="fs-7 text-secondary-custom fw-normal">@${s.leetcode_username}</div>
+                                        </div>
+                                    </a>
+                                </td>
+                                <td class="text-center fw-extrabold fs-6 text-easy">${s.total_solved}</td>
+                                <td class="text-center">
+                                    ${s.today_solves > 0 ? `<span class="badge bg-warning text-dark font-monospace fw-bold">+${s.today_solves}</span>` : `<span class="text-secondary-custom">-</span>`}
+                                </td>
+                                <td class="text-center font-monospace fw-bold fs-6">
+                                    ${s.current_streak > 0 ? `${s.current_streak}🔥` : `<span class="text-secondary-custom">0</span>`}
+                                </td>
+                            `;
+                            solversBody.appendChild(tr);
+                        });
+                    } else {
+                        solversBody.innerHTML = `
+                            <tr>
+                                <td colspan="5" class="text-center text-secondary-custom py-5">
+                                    <i class="bi bi-emoji-neutral display-6 mb-3"></i>
+                                    <p>No students found. Add some in the Admin Panel.</p>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                    
+                    // Render Weekly Summary
+                    if (data.weekly_report) {
+                        document.getElementById("weeklyReportCard").style.display = "block";
+                        document.getElementById("weeklyTopSolver").textContent = data.weekly_report.top_solver || "None";
+                        document.getElementById("weeklyMostActive").textContent = data.weekly_report.most_active || "None";
+                        document.getElementById("weeklyTopImprovement").textContent = data.weekly_report.top_improvement || "None";
+                        document.getElementById("weeklySolvesAvg").textContent = `${data.weekly_report.problems_solved} solves (Avg: ${data.weekly_report.average_solves} / student)`;
+                        document.getElementById("weeklyInactiveMembers").textContent = data.weekly_report.inactive_members || "None";
+                    }
+                    
+                    // Render Activity Feed
+                    const activityFeed = document.getElementById("recentActivityFeed");
+                    activityFeed.innerHTML = "";
+                    if (data.recent_submissions && data.recent_submissions.length > 0) {
+                        data.recent_submissions.forEach((sub, idx) => {
+                            let diffClass = "medium";
+                            if (sub.difficulty === "Easy") diffClass = "easy";
+                            else if (sub.difficulty === "Hard") diffClass = "hard";
+                            
+                            const div = document.createElement("div");
+                            div.className = `feed-item ${diffClass} animate-fade-in`;
+                            div.style.animationDelay = `${idx * 0.05}s`;
+                            div.innerHTML = `
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <span class="fw-bold">${sub.student_name}</span> 
+                                        <span class="text-secondary-custom">solved</span>
+                                        <a href="https://leetcode.com/problems/${sub.title_slug}" target="_blank" class="fw-semibold text-decoration-none text-reset ms-1">
+                                            ${sub.title}
+                                        </a>
+                                    </div>
+                                    <span class="badge-difficulty bg-${diffClass} text-dark">
+                                        ${sub.difficulty}
+                                    </span>
+                                </div>
+                                <div class="fs-7 text-secondary-custom mt-1">
+                                    <i class="bi bi-clock me-1"></i>${sub.time_ago}
+                                </div>
+                            `;
+                            activityFeed.appendChild(div);
+                        });
+                    } else {
+                        activityFeed.innerHTML = `
+                            <div class="text-center text-secondary-custom py-4">
+                                <p>No recent submissions fetched yet. Trigger an update in the Admin Panel.</p>
+                            </div>
+                        `;
+                    }
+                    
+                    // Render Daily Challenge
+                    if (data.daily_challenge) {
+                        document.getElementById("challengeTitle").textContent = data.daily_challenge.title;
+                        const difficultyBadge = document.getElementById("challengeDifficulty");
+                        const diff = data.daily_challenge.difficulty;
+                        difficultyBadge.textContent = diff;
+                        difficultyBadge.className = `badge bg-${diff === 'Easy' ? 'easy' : (diff === 'Hard' ? 'hard' : 'medium')} text-dark`;
+                        
+                        document.getElementById("challengeLink").href = `https://leetcode.com/problems/${data.daily_challenge.title_slug}/`;
+                        document.getElementById("challengeCompletion").textContent = `${data.challenge_completed_count} / ${data.total_students}`;
+                    }
+                    
+                    // Render Milestones
+                    const milestonesFeed = document.getElementById("milestonesFeed");
+                    milestonesFeed.innerHTML = "";
+                    if (data.notifications && data.notifications.length > 0) {
+                        data.notifications.forEach(notif => {
+                            const div = document.createElement("div");
+                            div.className = "p-3 mb-2 rounded-3 border border-secondary border-opacity-10 bg-dark bg-opacity-10";
+                            div.innerHTML = `
+                                <div class="fs-6 fw-semibold text-dark mb-1">${notif.content}</div>
+                                <div class="fs-7 text-secondary-custom font-monospace">${notif.time_ago}</div>
+                            `;
+                            milestonesFeed.appendChild(div);
+                        });
+                    } else {
+                        milestonesFeed.innerHTML = `
+                            <div class="text-center text-secondary-custom py-4">
+                                <p>No notifications generated yet.</p>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById("loader").innerHTML = `
+                    <div class="alert alert-danger max-width-md mx-auto" role="alert">
+                        <i class="bi bi-exclamation-octagon-fill me-2 fs-5"></i>
+                        Unable to connect to the backend server. Make sure your Render server is running.
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

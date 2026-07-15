@@ -88,6 +88,16 @@ class Submission(db.Model):
     difficulty = db.Column(db.String(20), nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False)
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'student_id': self.student_id,
+            'title': self.title,
+            'title_slug': self.title_slug,
+            'difficulty': self.difficulty,
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None
+        }
+
 class DailySnapshot(db.Model):
     __tablename__ = 'daily_snapshots'
     
@@ -104,12 +114,31 @@ class DailySnapshot(db.Model):
     
     __table_args__ = (db.UniqueConstraint('student_id', 'date', name='_student_date_uc'),)
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'student_id': self.student_id,
+            'date': self.date.isoformat() if self.date else None,
+            'total_solved': self.total_solved,
+            'easy_solved': self.easy_solved,
+            'medium_solved': self.medium_solved,
+            'hard_solved': self.hard_solved,
+            'daily_solves': self.daily_solves
+        }
+
 class Notification(db.Model):
     __tablename__ = 'notifications'
     
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.String(500), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'content': self.content,
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None
+        }
 
 class WeeklyReport(db.Model):
     __tablename__ = 'weekly_reports'
@@ -123,3 +152,15 @@ class WeeklyReport(db.Model):
     average_solves = db.Column(db.Float, default=0.0)   # Average problems solved per student
     inactive_members = db.Column(db.Text)          # Comma-separated names of inactive students
     top_improvement = db.Column(db.String(100))   # Student who grew solved count by most
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'week_start': self.week_start.isoformat() if self.week_start else None,
+            'top_solver': self.top_solver,
+            'most_active': self.most_active,
+            'problems_solved': self.problems_solved,
+            'average_solves': self.average_solves,
+            'inactive_members': self.inactive_members,
+            'top_improvement': self.top_improvement
+        }
