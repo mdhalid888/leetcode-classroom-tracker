@@ -7,16 +7,24 @@ document.addEventListener("DOMContentLoaded", () => {
     
     const isLoginPage = currentPath.includes("login.html") || currentPath.includes("admin_login.html") || currentPath === "/login" || currentPath === "/admin_login";
     
+    const isLocal = window.location.hostname === 'localhost' || 
+                    window.location.hostname === '127.0.0.1' || 
+                    window.location.protocol === 'file:';
+    
+    const getPageUrl = (page) => {
+        return isLocal ? page : page.replace('.html', '');
+    };
+    
     // Protect routes
     if (!studentData && !adminToken && !isLoginPage) {
-        window.location.href = "login.html";
+        window.location.href = getPageUrl("login.html");
         return;
     }
     
     // If on admin pages, make sure adminToken exists
     const isAdminPage = currentPath.includes("admin.html") || currentPath === "/admin";
     if (isAdminPage && !adminToken) {
-        window.location.href = "admin_login.html";
+        window.location.href = getPageUrl("admin_login.html");
         return;
     }
     
@@ -50,7 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
         navbarContainer.innerHTML = `
             <nav class="navbar navbar-expand-lg navbar-light navbar-custom py-3 mb-4 sticky-top">
                 <div class="container">
-                    <a class="navbar-brand fw-extrabold fs-4 text-easy d-flex align-items-center" href="${adminToken ? 'admin.html' : 'index.html'}">
+                    <a class="navbar-brand fw-extrabold fs-4 text-easy d-flex align-items-center" href="${getPageUrl(adminToken ? 'admin.html' : 'index.html')}">
                         <i class="bi bi-code-slash me-2"></i>LeetCode Classroom
                     </a>
                     
@@ -62,33 +70,33 @@ document.addEventListener("DOMContentLoaded", () => {
                         <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
                             ${adminToken ? `
                                 <li class="nav-item">
-                                    <a class="nav-link fw-semibold px-3 ${activeClass('admin.html')}" href="admin.html">
+                                    <a class="nav-link fw-semibold px-3 ${activeClass('admin.html')}" href="${getPageUrl('admin.html')}">
                                         <i class="bi bi-folder-fill me-1"></i>Database Scanner
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link fw-semibold px-3 ${activeClass('leaderboard.html')}" href="leaderboard.html">
+                                    <a class="nav-link fw-semibold px-3 ${activeClass('leaderboard.html')}" href="${getPageUrl('leaderboard.html')}">
                                         <i class="bi bi-trophy-fill me-1"></i>Leaderboard
                                     </a>
                                 </li>
                             ` : `
                                 <li class="nav-item">
-                                    <a class="nav-link fw-semibold px-3 ${activeClass('index.html')}" href="index.html">
+                                    <a class="nav-link fw-semibold px-3 ${activeClass('index.html')}" href="${getPageUrl('index.html')}">
                                         <i class="bi bi-grid-1x2-fill me-1"></i>Dashboard
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link fw-semibold px-3 ${activeClass('leaderboard.html')}" href="leaderboard.html">
+                                    <a class="nav-link fw-semibold px-3 ${activeClass('leaderboard.html')}" href="${getPageUrl('leaderboard.html')}">
                                         <i class="bi bi-trophy-fill me-1"></i>Leaderboard
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link fw-semibold px-3 ${activeClass('compare.html')}" href="compare.html">
+                                    <a class="nav-link fw-semibold px-3 ${activeClass('compare.html')}" href="${getPageUrl('compare.html')}">
                                         <i class="bi bi-bar-chart-fill me-1"></i>Compare
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link fw-semibold px-3 ${activeClass('attendance.html')}" href="attendance.html">
+                                    <a class="nav-link fw-semibold px-3 ${activeClass('attendance.html')}" href="${getPageUrl('attendance.html')}">
                                         <i class="bi bi-calendar-check-fill me-1"></i>Attendance
                                     </a>
                                 </li>
@@ -109,7 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
             logoutBtn.addEventListener("click", (e) => {
                 e.preventDefault();
                 localStorage.clear();
-                window.location.href = adminToken ? "admin_login.html" : "login.html";
+                window.location.href = getPageUrl(adminToken ? "admin_login.html" : "login.html");
             });
         }
     }

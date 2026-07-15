@@ -67,7 +67,7 @@
             </form>
             
             <div class="mt-4">
-                <a href="admin_login.html" class="text-decoration-none text-secondary-custom fs-7 fw-semibold">
+                <a href="admin_login.html" id="adminPortalLink" class="text-decoration-none text-secondary-custom fs-7 fw-semibold">
                     <i class="bi bi-shield-lock-fill me-1"></i>Admin Access Portal
                 </a>
             </div>
@@ -78,6 +78,14 @@
     <script src="js/config.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
+            const adminLink = document.getElementById("adminPortalLink");
+            if (adminLink) {
+                const isLocal = window.location.hostname === 'localhost' || 
+                                window.location.hostname === '127.0.0.1' || 
+                                window.location.protocol === 'file:';
+                adminLink.href = isLocal ? "admin_login.html" : "admin_login";
+            }
+
             // Redirect if already logged in
             if (localStorage.getItem("current_student")) {
                 window.location.href = "index.html";
