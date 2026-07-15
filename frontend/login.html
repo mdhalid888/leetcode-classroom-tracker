@@ -91,15 +91,9 @@
                 adminLink.href = getPageUrl("admin_login.html");
             }
 
-            // Redirect if already logged in
-            if (localStorage.getItem("current_student")) {
-                window.location.href = getPageUrl("index.html");
-                return;
-            }
-            if (localStorage.getItem("admin_token")) {
-                window.location.href = getPageUrl("admin.html");
-                return;
-            }
+            // Redirect to dashboard immediately since student login is removed
+            window.location.href = getPageUrl("index.html");
+            return;
             
             const form = document.getElementById("loginForm");
             const errorContainer = document.getElementById("errorContainer");
