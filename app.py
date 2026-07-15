@@ -1216,7 +1216,7 @@ def api_dashboard():
 
     return jsonify({
         'status': 'success',
-        'student': student.to_dict(),
+        'student': student.to_dict() if student else {'department': class_dept, 'academic_year': class_year},
         'total_students': total_students,
         'total_solves': total_solves,
         'today_solves': today_solves,
