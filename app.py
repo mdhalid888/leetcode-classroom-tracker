@@ -1679,6 +1679,20 @@ def api_admin_update_status():
         'update_status': update_status()
     })
 
+@app.route('/api/health', methods=['GET'])
+def api_health():
+    db_status = "connected"
+    try:
+        db.session.execute(db.select(1))
+    except Exception as e:
+        db_status = f"error: {e}"
+        
+    return jsonify({
+        "status": "online",
+        "database": db_status,
+        "server": "running"
+    }), 200
+
 # APP RUNNER & DB SETUP
 
 # Create directories and seed database
