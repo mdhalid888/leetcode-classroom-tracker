@@ -1295,26 +1295,46 @@ def api_leaderboard():
     ist_start = datetime(today_val.year, today_val.month, today_val.day, 0, 0, 0) - timedelta(hours=5, minutes=30)
     ist_end = datetime(today_val.year, today_val.month, today_val.day, 23, 59, 59) - timedelta(hours=5, minutes=30)
     
+    # 1. Fetch today's solves for all queried students in one group query
+    student_ids = [s.id for s in students]
+    today_solves_map = {}
+    if student_ids:
+        today_counts = db.session.query(
+            Submission.student_id,
+            db.func.count(Submission.title_slug.distinct())
+        ).filter(
+            Submission.student_id.in_(student_ids),
+            Submission.timestamp >= ist_start,
+            Submission.timestamp <= ist_end
+        ).group_by(Submission.student_id).all()
+        today_solves_map = {sid: count for sid, count in today_counts}
+        
+    # 2. Fetch weekly solves in one query
+    weekly_solves_map = {}
+    if student_ids:
+        weekly_snaps = DailySnapshot.query.filter(
+            DailySnapshot.student_id.in_(student_ids),
+            DailySnapshot.date >= seven_days_ago
+        ).all()
+        for snap in weekly_snaps:
+            weekly_solves_map[snap.student_id] = weekly_solves_map.get(snap.student_id, 0) + snap.daily_solves
+            
+    # 3. Fetch monthly solves in one query
+    monthly_solves_map = {}
+    if student_ids:
+        monthly_snaps = DailySnapshot.query.filter(
+            DailySnapshot.student_id.in_(student_ids),
+            DailySnapshot.date >= thirty_days_ago
+        ).all()
+        for snap in monthly_snaps:
+            monthly_solves_map[snap.student_id] = monthly_solves_map.get(snap.student_id, 0) + snap.daily_solves
+
     students_list = []
     for s in students:
         s_dict = s.to_dict()
-        s_dict['today_solves'] = db.session.query(Submission.title_slug).filter(
-            Submission.student_id == s.id,
-            Submission.timestamp >= ist_start,
-            Submission.timestamp <= ist_end
-        ).distinct().count()
-        
-        weekly_snaps = DailySnapshot.query.filter(
-            DailySnapshot.student_id == s.id,
-            DailySnapshot.date >= seven_days_ago
-        ).all()
-        s_dict['weekly_solves'] = sum(snap.daily_solves for snap in weekly_snaps)
-        
-        monthly_snaps = DailySnapshot.query.filter(
-            DailySnapshot.student_id == s.id,
-            DailySnapshot.date >= thirty_days_ago
-        ).all()
-        s_dict['monthly_solves'] = sum(snap.daily_solves for snap in monthly_snaps)
+        s_dict['today_solves'] = today_solves_map.get(s.id, 0)
+        s_dict['weekly_solves'] = weekly_solves_map.get(s.id, 0)
+        s_dict['monthly_solves'] = monthly_solves_map.get(s.id, 0)
         s_dict['time_ago'] = time_ago(s.last_updated) if s.last_updated else "Never"
         students_list.append(s_dict)
         
@@ -1698,9 +1718,20 @@ def api_health():
 # Create directories and seed database
 with app.app_context():
     db.create_all()
-    # Check if empty, and maybe inject dummy data helper if user wants, 
-    # but leaving it empty for Excel import is cleaner.
     
+    # Auto-seed and sync classmates if database is empty on start
+    from seed_db import seed_classmates
+    from models import Student
+    if Student.query.count() == 0:
+        print("Database is empty on startup. Automatically seeding from uploads folder...")
+        seed_classmates(replace=False)
+        
+        # Trigger background LeetCode sync task immediately so the dashboard populates
+        from scheduler import run_update_task
+        import threading
+        threading.Thread(target=run_update_task, args=(app,)).start()
+        print("Immediate background LeetCode update task started.")
+        
     # Initialize background scheduler
     init_scheduler(app)
 

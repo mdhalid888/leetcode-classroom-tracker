@@ -207,7 +207,7 @@
                     targetId = loggedInStudent.id;
                 } else {
                     // If admin page without explicit ID, redirect to leaderboard
-                    window.location.href = "leaderboard.html";
+                    window.location.href = getPageUrl("leaderboard.html");
                     return;
                 }
             }

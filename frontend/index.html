@@ -98,7 +98,7 @@
                     <div class="card-glass p-4 mb-4">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h3 class="mb-0 fs-4"><i class="bi bi-award-fill text-warning me-2"></i>Top Classroom Solvers</h3>
-                            <a href="leaderboard.html" class="btn btn-sm btn-outline-easy fw-semibold rounded-pill px-3">
+                            <a href="leaderboard.html" id="viewAllBtn" class="btn btn-sm btn-outline-easy fw-semibold rounded-pill px-3">
                                 View All <i class="bi bi-arrow-right"></i>
                             </a>
                         </div>
@@ -222,7 +222,10 @@
             const loader = document.getElementById("loader");
             const content = document.getElementById("dashboard-content");
             
-            
+            const viewAllBtn = document.getElementById("viewAllBtn");
+            if (viewAllBtn && window.getPageUrl) {
+                viewAllBtn.href = window.getPageUrl("leaderboard.html");
+            }
             
             async function loadDashboard() {
                 loader.style.display = "block";

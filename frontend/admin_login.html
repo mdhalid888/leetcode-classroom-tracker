@@ -77,8 +77,8 @@
             </form>
             
             <div class="mt-4">
-                <a href="login.html" id="studentPortalLink" class="text-decoration-none text-secondary-custom fs-7 fw-semibold">
-                    <i class="bi bi-arrow-left me-1"></i>Back to Student Portal
+                <a href="index.html" id="studentPortalLink" class="text-decoration-none text-secondary-custom fs-7 fw-semibold">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
                 </a>
             </div>
         </div>
@@ -98,7 +98,7 @@
 
             const studentLink = document.getElementById("studentPortalLink");
             if (studentLink) {
-                studentLink.href = getPageUrl("login.html");
+                studentLink.href = getPageUrl("index.html");
             }
 
             if (localStorage.getItem("admin_token")) {
