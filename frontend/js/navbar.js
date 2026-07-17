@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const currentPath = window.location.pathname;
     
     // Check authentication status
-    const adminToken = localStorage.getItem("admin_token");
+    const adminToken = sessionStorage.getItem("admin_token");
     
     const isLocal = window.location.hostname === 'localhost' || 
                     window.location.hostname === '127.0.0.1' || 
@@ -57,9 +57,9 @@ document.addEventListener("DOMContentLoaded", () => {
         let rightNavHtml = "";
         
         if (adminToken) {
-            const adminEmail = localStorage.getItem("admin_email") || "test456@gmail.com";
+            const adminEmail = sessionStorage.getItem("admin_email") || "test456@gmail.com";
             const role = getAdminRoleDetails(adminEmail);
-            localStorage.setItem("admin_dept", role.dept);
+            sessionStorage.setItem("admin_dept", role.dept);
             
             rightNavHtml = `
                 <div class="d-flex align-items-center gap-3">
@@ -70,7 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
             `;
         } else {
-            localStorage.removeItem("admin_dept");
+            sessionStorage.removeItem("admin_dept");
             rightNavHtml = `
                 <div class="d-flex align-items-center gap-3">
                     <a href="${getPageUrl('admin_login.html')}" class="btn btn-sm btn-outline-easy rounded-pill px-3">
@@ -141,7 +141,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (logoutBtn) {
             logoutBtn.addEventListener("click", (e) => {
                 e.preventDefault();
-                localStorage.removeItem("admin_token");
+                sessionStorage.removeItem("admin_token");
+                sessionStorage.removeItem("admin_email");
+                sessionStorage.removeItem("admin_dept");
                 window.location.href = getPageUrl("index.html");
             });
         }

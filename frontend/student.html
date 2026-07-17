@@ -197,7 +197,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", async () => {
             const studentData = localStorage.getItem("current_student");
-            const adminToken = localStorage.getItem("admin_token");
+            const adminToken = sessionStorage.getItem("admin_token");
             const urlParams = new URLSearchParams(window.location.search);
             let targetId = urlParams.get("id");
             

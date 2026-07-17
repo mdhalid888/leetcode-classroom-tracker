@@ -101,7 +101,7 @@
                 studentLink.href = getPageUrl("index.html");
             }
 
-            if (localStorage.getItem("admin_token")) {
+            if (sessionStorage.getItem("admin_token")) {
                 window.location.href = getPageUrl("admin.html");
                 return;
             }
@@ -129,8 +129,8 @@
                     const data = await response.json();
                     
                     if (response.ok && data.status === "success") {
-                        localStorage.setItem("admin_token", data.admin_token);
-                        localStorage.setItem("admin_email", emailVal);
+                        sessionStorage.setItem("admin_token", data.admin_token);
+                        sessionStorage.setItem("admin_email", emailVal);
                         window.location.href = getPageUrl("admin.html");
                     } else {
                         errorMsg.textContent = data.message || "Invalid credentials.";

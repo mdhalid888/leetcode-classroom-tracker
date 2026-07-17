@@ -199,7 +199,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const studentData = localStorage.getItem("current_student");
-            const adminToken = localStorage.getItem("admin_token");
+            const adminToken = sessionStorage.getItem("admin_token");
             const student = studentData ? JSON.parse(studentData) : null;
             const studentId = student ? student.id : '';
             

@@ -181,7 +181,7 @@
     <script src="js/navbar.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            const adminToken = localStorage.getItem("admin_token");
+            const adminToken = sessionStorage.getItem("admin_token");
             if (!adminToken) return; // Redirect handled by navbar.js
             
             const activeStudentsCount = document.getElementById("activeStudentsCount");
