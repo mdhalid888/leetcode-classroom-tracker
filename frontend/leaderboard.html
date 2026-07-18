@@ -76,7 +76,6 @@
                     <button class="btn-filter inactive" data-filter="medium">Medium</button>
                     <button class="btn-filter inactive" data-filter="hard">Hard</button>
                     <button class="btn-filter inactive" data-filter="streak">Streak</button>
-                    <button class="btn-filter inactive" data-filter="rating">Contest Rating</button>
                 </div>
             </div>
 
@@ -101,7 +100,7 @@
                             <th scope="col" class="text-center">Hard</th>
                             <th scope="col" class="text-center">Acceptance</th>
                             <th scope="col" class="text-center">Streak</th>
-                            <th scope="col" class="text-center">Contest Rating</th>
+                            <th scope="col" class="text-center">Today's Solves</th>
                             <th scope="col" class="text-center">Last Updated</th>
                         </tr>
                     </thead>
@@ -171,7 +170,7 @@
                                 else if (idx === 2) rankBadge = "🥉";
                                 
                                 const avatar = s.avatar_url || 'https://assets.leetcode.com/users/default_avatar.png';
-                                const contestRatingVal = s.contest_rating > 0 ? Math.round(s.contest_rating) : '-';
+                                const todaySolvesVal = s.today_solves > 0 ? `+${s.today_solves}` : '0';
                                 
                                 const tr = document.createElement("tr");
                                 tr.innerHTML = `
@@ -191,7 +190,7 @@
                                     <td class="text-center font-monospace text-hard fs-7">${s.hard_solved}</td>
                                     <td class="text-center font-monospace fs-7">${s.acceptance_rate}%</td>
                                     <td class="text-center font-monospace fs-7">${s.current_streak > 0 ? `${s.current_streak}🔥` : '0'}</td>
-                                    <td class="text-center font-monospace fs-7 fw-bold text-info">${contestRatingVal}</td>
+                                    <td class="text-center font-monospace fs-7 fw-bold ${s.today_solves > 0 ? 'text-success' : 'text-secondary-custom'}">${todaySolvesVal}</td>
                                     <td class="text-center fs-7 text-secondary-custom">${s.time_ago}</td>
                                 `;
                                 leaderboardBody.appendChild(tr);
