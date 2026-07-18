@@ -1367,6 +1367,25 @@ def api_leaderboard():
 def api_student_profile(student_id):
     student = Student.query.get_or_404(student_id)
     
+    # Check if last_updated is more than 3 minutes ago or is None
+    # If so, do a quick single-student update before returning profile
+    now = datetime.now()
+    is_stale = False
+    if not student.last_updated:
+        is_stale = True
+    else:
+        diff = now - student.last_updated
+        if diff.total_seconds() > 180: # 3 minutes
+            is_stale = True
+            
+    if is_stale:
+        try:
+            from scheduler import update_single_student
+            update_single_student(student.id, app)
+            db.session.refresh(student)
+        except Exception as e:
+            print(f"Error during on-demand single student update: {e}")
+    
     all_students = Student.query.filter_by(is_active=True).order_by(Student.total_solved.desc()).all()
     class_rank = next((idx + 1 for idx, s in enumerate(all_students) if s.id == student.id), "-")
     
