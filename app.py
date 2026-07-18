@@ -859,10 +859,8 @@ def delete_file(filename):
 
 # EXPORTS & REPORTS DOWNLOAD
 
-@app.route('/admin/download/<format>')
+@app.route('/api/admin/download/<format>')
 def download_report(format):
-    if not session.get('is_admin'):
-        return redirect(url_for('admin_login'))
         
     dept = request.args.get('dept', 'ALL').strip().upper()
     year = request.args.get('year', 'ALL').strip()

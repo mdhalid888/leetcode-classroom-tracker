@@ -208,8 +208,8 @@
                 const dept = reportDept.value;
                 const year = reportYear.value;
                 
-                btnCSV.href = `${API_BASE_URL}/admin/download/csv?dept=${dept}&year=${year}`;
-                btnPDF.href = `${API_BASE_URL}/admin/download/pdf?dept=${dept}&year=${year}`;
+                btnCSV.href = `${API_BASE_URL}/api/admin/download/csv?dept=${dept}&year=${year}`;
+                btnPDF.href = `${API_BASE_URL}/api/admin/download/pdf?dept=${dept}&year=${year}`;
             }
             
             reportDept.addEventListener("change", updateReportUrls);
