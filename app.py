@@ -1720,11 +1720,16 @@ with app.app_context():
     # Auto-seed and sync classmates if database is empty on start
     from seed_db import seed_classmates
     from models import Student
-    if Student.query.count() == 0:
+    
+    empty_db = Student.query.count() == 0
+    if empty_db:
         print("Database is empty on startup. Automatically seeding from uploads folder...")
         seed_classmates(replace=False)
         
-        # Trigger background LeetCode sync task immediately so the dashboard populates
+    # Check if there are active students who have never been scraped (e.g. if the scraper was interrupted)
+    unscraped_exists = Student.query.filter_by(is_active=True, last_updated=None).count() > 0
+    if empty_db or unscraped_exists:
+        # Trigger background LeetCode sync task immediately so the database populates
         from scheduler import run_update_task
         import threading
         threading.Thread(target=run_update_task, args=(app,)).start()
