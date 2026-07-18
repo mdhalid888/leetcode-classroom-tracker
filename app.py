@@ -1369,10 +1369,10 @@ def api_daily_task():
     today_date = ist_now.date()
     
     from models import DailyTask
-    task = DailyTask.query.filter_by(date=today_date).first()
+    tasks = DailyTask.query.filter_by(date=today_date).order_by(DailyTask.id.asc()).all()
     return jsonify({
         'status': 'success',
-        'task': task.to_dict() if task else None,
+        'tasks': [t.to_dict() for t in tasks],
         'date': today_date.strftime('%B %d, %Y')
     })
 
@@ -1382,7 +1382,7 @@ def api_daily_tasks_history():
     today_date = ist_now.date()
     
     from models import DailyTask
-    tasks = DailyTask.query.filter(DailyTask.date < today_date).order_by(DailyTask.date.desc()).all()
+    tasks = DailyTask.query.filter(DailyTask.date < today_date).order_by(DailyTask.date.desc(), DailyTask.id.asc()).all()
     return jsonify({
         'status': 'success',
         'history': [t.to_dict() for t in tasks]
@@ -1404,20 +1404,30 @@ def api_admin_daily_task():
     today_date = ist_now.date()
     
     from models import DailyTask
-    task = DailyTask.query.filter_by(date=today_date).first()
-    if task:
-        task.problem_number = prob_no
-        task.problem_name = prob_name
-    else:
-        task = DailyTask(problem_number=prob_no, problem_name=prob_name, date=today_date)
-        db.session.add(task)
+    task = DailyTask(problem_number=prob_no, problem_name=prob_name, date=today_date)
+    db.session.add(task)
         
     try:
         db.session.commit()
-        return jsonify({'status': 'success', 'message': 'Daily task saved successfully.', 'task': task.to_dict()})
+        return jsonify({'status': 'success', 'message': 'Daily task added successfully.', 'task': task.to_dict()})
     except Exception as e:
         db.session.rollback()
         return jsonify({'status': 'error', 'message': f'Error saving daily task: {e}'}), 500
+
+@app.route('/api/admin/daily-task/<int:task_id>', methods=['DELETE'])
+def api_admin_delete_daily_task(task_id):
+    if not verify_admin_auth():
+        return jsonify({'status': 'error', 'message': 'Unauthorized admin access.'}), 401
+        
+    from models import DailyTask
+    task = DailyTask.query.get_or_404(task_id)
+    try:
+        db.session.delete(task)
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Daily task deleted successfully.'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': f'Error deleting daily task: {e}'}), 500
 
 @app.route('/api/student/<int:student_id>', methods=['GET'])
 def api_student_profile(student_id):

@@ -170,18 +170,20 @@
                 <!-- Sidebar Info Panel (Right Col) -->
                 <div class="col-lg-4 animate-fade-in" style="animation-delay: 0.2s;">
                     <!-- Today's Task Card -->
-                    <div class="card-glass p-4 mb-4 text-center border-info border-opacity-20">
+                    <div class="card-glass p-4 mb-4 border-info border-opacity-20">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <span class="fs-7 badge bg-info text-dark px-3 py-2 rounded-pill fw-bold text-uppercase tracking-wider">
-                                <i class="bi bi-calendar-event-fill"></i> Today's Task
+                                <i class="bi bi-calendar-event-fill"></i> Today's Tasks
                             </span>
                             <button id="btnTaskHistory" class="btn btn-sm btn-outline-easy rounded-pill px-2 py-1 fs-7">
                                 <i class="bi bi-clock-history"></i> History
                             </button>
                         </div>
-                        <div id="taskDetails">
-                            <div class="fs-7 text-secondary-custom mb-1" id="taskDate">-</div>
-                            <h4 id="taskTitle" class="mb-3">-</h4>
+                        <div id="taskDetails" class="text-start">
+                            <div class="fs-7 text-secondary-custom text-center mb-3 pb-2 border-bottom border-secondary border-opacity-10" id="taskDate">-</div>
+                            <div id="taskListContainer">
+                                <!-- List of tasks rendered dynamically -->
+                            </div>
                         </div>
                     </div>
 
@@ -430,22 +432,36 @@
                             document.getElementById("challengeCompletion").textContent = `${data.challenge_completed_count} / ${data.total_students}`;
                         }
                         
-                        // Render Today's Task
+                        // Render Today's Tasks
                         try {
                             const taskResponse = await fetch(`${API_BASE_URL}/api/daily-task?_=${Date.now()}`);
                             const taskData = await taskResponse.json();
                             const taskDateEl = document.getElementById("taskDate");
-                            const taskTitleEl = document.getElementById("taskTitle");
+                            const taskListContainer = document.getElementById("taskListContainer");
                             
                             if (taskDateEl) {
                                 taskDateEl.textContent = taskData.date || "";
                             }
-                            if (taskTitleEl) {
-                                if (taskData.task) {
-                                    const numStr = taskData.task.problem_number ? `#${taskData.task.problem_number}: ` : "";
-                                    taskTitleEl.innerHTML = `<span class="fw-bold text-dark fs-5">${numStr}${taskData.task.problem_name}</span>`;
+                            if (taskListContainer) {
+                                taskListContainer.innerHTML = "";
+                                if (taskData.tasks && taskData.tasks.length > 0) {
+                                    const ol = document.createElement("ol");
+                                    ol.className = "list-group list-group-numbered list-group-flush fs-7";
+                                    taskData.tasks.forEach(task => {
+                                        const li = document.createElement("li");
+                                        li.className = "list-group-item d-flex justify-content-between align-items-start bg-transparent text-dark border-0 px-0 py-2";
+                                        const numStr = task.problem_number ? ` (Problem #${task.problem_number})` : "";
+                                        li.innerHTML = `
+                                            <div class="ms-2 me-auto fw-bold text-dark">
+                                                ${task.problem_name}
+                                                <div class="fw-normal text-secondary-custom fs-8">${numStr}</div>
+                                            </div>
+                                        `;
+                                        ol.appendChild(li);
+                                    });
+                                    taskListContainer.appendChild(ol);
                                 } else {
-                                    taskTitleEl.innerHTML = `<span class="text-secondary-custom fs-6 fw-normal">No task assigned for today.</span>`;
+                                    taskListContainer.innerHTML = `<div class="text-center text-secondary-custom fs-7 py-3">No tasks assigned for today.</div>`;
                                 }
                             }
                         } catch (taskErr) {

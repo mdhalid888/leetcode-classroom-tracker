@@ -171,7 +171,7 @@ class DailyTask(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     problem_number = db.Column(db.String(50), nullable=True)
     problem_name = db.Column(db.String(255), nullable=False)
-    date = db.Column(db.Date, nullable=False, unique=True)
+    date = db.Column(db.Date, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
