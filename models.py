@@ -164,3 +164,21 @@ class WeeklyReport(db.Model):
             'inactive_members': self.inactive_members,
             'top_improvement': self.top_improvement
         }
+
+class DailyTask(db.Model):
+    __tablename__ = 'daily_tasks'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    problem_number = db.Column(db.String(50), nullable=True)
+    problem_name = db.Column(db.String(255), nullable=False)
+    date = db.Column(db.Date, nullable=False, unique=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'problem_number': self.problem_number,
+            'problem_name': self.problem_name,
+            'date': self.date.isoformat() if self.date else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }

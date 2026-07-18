@@ -216,7 +216,7 @@
             const profileContent = document.getElementById("profileContent");
             
             try {
-                const response = await fetch(`${API_BASE_URL}/api/student/${targetId}`);
+                const response = await fetch(`${API_BASE_URL}/api/student/${targetId}?_=${Date.now()}`);
                 const data = await response.json();
                 
                 if (response.ok && data.status === "success") {

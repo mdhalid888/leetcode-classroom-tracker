@@ -129,6 +129,29 @@
                         </button>
                     </form>
                 </div>
+
+                <!-- Assign Daily Task Card -->
+                <div class="card-glass p-4 mt-4">
+                    <h3 class="fs-4 mb-3"><i class="bi bi-calendar-check text-info me-2"></i>Assign Daily Task</h3>
+                    <p class="text-secondary-custom fs-7 mb-4">
+                        Set a task for students to complete today. The task will automatically expire and clear at midnight.
+                    </p>
+                    <form id="dailyTaskForm">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label for="taskProbNumber" class="form-label fw-semibold text-secondary-custom fs-7">Problem Number</label>
+                                <input type="text" class="form-control login-input fs-7 rounded-pill px-3 py-2" id="taskProbNumber" placeholder="e.g. 1">
+                            </div>
+                            <div class="col-md-8">
+                                <label for="taskProbName" class="form-label fw-semibold text-secondary-custom fs-7">Problem Name *</label>
+                                <input type="text" class="form-control login-input fs-7 rounded-pill px-3 py-2" id="taskProbName" placeholder="e.g. Two Sum" required>
+                            </div>
+                        </div>
+                        <button type="submit" id="btnSaveTask" class="btn btn-easy text-dark fw-bold rounded-pill px-4">
+                            <i class="bi bi-calendar-check-fill me-1"></i> Save Task
+                        </button>
+                    </form>
+                </div>
             </div>
 
             <!-- Status & Sync Panel (Right) -->
@@ -440,6 +463,48 @@
                         console.error("Status polling error:", err);
                     }
                 }, 1500);
+            }
+            
+            // Daily Task Form Submission
+            const dailyTaskForm = document.getElementById("dailyTaskForm");
+            const btnSaveTask = document.getElementById("btnSaveTask");
+            const taskProbNumber = document.getElementById("taskProbNumber");
+            const taskProbName = document.getElementById("taskProbName");
+            
+            if (dailyTaskForm) {
+                dailyTaskForm.addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    btnSaveTask.disabled = true;
+                    
+                    const problemNumber = taskProbNumber.value.trim();
+                    const problemName = taskProbName.value.trim();
+                    
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/api/admin/daily-task`, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-Admin-Auth": adminToken
+                            },
+                            body: JSON.stringify({
+                                problem_number: problemNumber,
+                                problem_name: problemName
+                            })
+                        });
+                        const data = await response.json();
+                        
+                        if (response.ok && data.status === "success") {
+                            showToast(data.message || "Daily task assigned successfully!", "success");
+                            dailyTaskForm.reset();
+                        } else {
+                            showToast(data.message || "Failed to save daily task.", "error");
+                        }
+                    } catch (err) {
+                        showToast("Error saving daily task.", "error");
+                    } finally {
+                        btnSaveTask.disabled = false;
+                    }
+                });
             }
             
             // Initial load

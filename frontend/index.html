@@ -169,6 +169,22 @@
 
                 <!-- Sidebar Info Panel (Right Col) -->
                 <div class="col-lg-4 animate-fade-in" style="animation-delay: 0.2s;">
+                    <!-- Today's Task Card -->
+                    <div class="card-glass p-4 mb-4 text-center border-info border-opacity-20">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="fs-7 badge bg-info text-dark px-3 py-2 rounded-pill fw-bold text-uppercase tracking-wider">
+                                <i class="bi bi-calendar-event-fill"></i> Today's Task
+                            </span>
+                            <button id="btnTaskHistory" class="btn btn-sm btn-outline-easy rounded-pill px-2 py-1 fs-7">
+                                <i class="bi bi-clock-history"></i> History
+                            </button>
+                        </div>
+                        <div id="taskDetails">
+                            <div class="fs-7 text-secondary-custom mb-1" id="taskDate">-</div>
+                            <h4 id="taskTitle" class="mb-3">-</h4>
+                        </div>
+                    </div>
+
                     <!-- Daily Challenge Card -->
                     <div class="card-glass p-4 mb-4 text-center border-warning border-opacity-20">
                         <span class="fs-7 badge bg-warning text-dark mb-3 px-3 py-2 rounded-pill fw-bold text-uppercase tracking-wider">
@@ -196,6 +212,35 @@
                         <div id="milestonesFeed" class="pe-2" style="max-height: 400px; overflow-y: auto;">
                             <!-- Rendered dynamically -->
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task History Modal -->
+    <div class="modal fade" id="taskHistoryModal" tabindex="-1" aria-labelledby="taskHistoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content card-glass border-0" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); border-radius: 20px;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark" id="taskHistoryModalLabel">
+                        <i class="bi bi-clock-history text-info me-2"></i>Daily Task History
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-custom mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Task Assigned</th>
+                                </tr>
+                            </thead>
+                            <tbody id="taskHistoryBody">
+                                <!-- Rendered dynamically -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -235,7 +280,7 @@
                 const selectedYear = yearSelect ? yearSelect.value : "ALL";
                 
                 try {
-                    const response = await fetch(`${API_BASE_URL}/api/dashboard?student_id=${studentId}&dept=${selectedDept}&year=${selectedYear}`);
+                    const response = await fetch(`${API_BASE_URL}/api/dashboard?student_id=${studentId}&dept=${selectedDept}&year=${selectedYear}&_=${Date.now()}`);
                     const data = await response.json();
                     
                     if (response.ok && data.status === "success") {
@@ -385,6 +430,28 @@
                             document.getElementById("challengeCompletion").textContent = `${data.challenge_completed_count} / ${data.total_students}`;
                         }
                         
+                        // Render Today's Task
+                        try {
+                            const taskResponse = await fetch(`${API_BASE_URL}/api/daily-task?_=${Date.now()}`);
+                            const taskData = await taskResponse.json();
+                            const taskDateEl = document.getElementById("taskDate");
+                            const taskTitleEl = document.getElementById("taskTitle");
+                            
+                            if (taskDateEl) {
+                                taskDateEl.textContent = taskData.date || "";
+                            }
+                            if (taskTitleEl) {
+                                if (taskData.task) {
+                                    const numStr = taskData.task.problem_number ? `#${taskData.task.problem_number}: ` : "";
+                                    taskTitleEl.innerHTML = `<span class="fw-bold text-dark fs-5">${numStr}${taskData.task.problem_name}</span>`;
+                                } else {
+                                    taskTitleEl.innerHTML = `<span class="text-secondary-custom fs-6 fw-normal">No task assigned for today.</span>`;
+                                }
+                            }
+                        } catch (taskErr) {
+                            console.error("Error loading daily task:", taskErr);
+                        }
+                        
                         // Render Milestones
                         const milestonesFeed = document.getElementById("milestonesFeed");
                         milestonesFeed.innerHTML = "";
@@ -420,6 +487,45 @@
             // Event listeners
             if (applyBtn) {
                 applyBtn.addEventListener("click", loadDashboard);
+            }
+            
+            // Task History Modal Logic
+            const btnTaskHistory = document.getElementById("btnTaskHistory");
+            const taskHistoryModal = new bootstrap.Modal(document.getElementById("taskHistoryModal"));
+            const taskHistoryBody = document.getElementById("taskHistoryBody");
+            
+            if (btnTaskHistory) {
+                btnTaskHistory.addEventListener("click", async () => {
+                    taskHistoryBody.innerHTML = `<tr><td colspan="2" class="text-center py-3"><div class="spinner-border spinner-border-sm text-info" role="status"></div> Loading...</td></tr>`;
+                    taskHistoryModal.show();
+                    
+                    try {
+                        const res = await fetch(`${API_BASE_URL}/api/daily-tasks/history?_=${Date.now()}`);
+                        const data = await res.json();
+                        
+                        taskHistoryBody.innerHTML = "";
+                        if (data.history && data.history.length > 0) {
+                            data.history.forEach(item => {
+                                const tr = document.createElement("tr");
+                                const numStr = item.problem_number ? `#${item.problem_number}: ` : "";
+                                // Parse date string safely
+                                const dateParts = item.date.split('-');
+                                const taskDateObj = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+                                const formattedDate = taskDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                                tr.innerHTML = `
+                                    <td class="fs-7 text-secondary-custom fw-semibold">${formattedDate}</td>
+                                    <td class="fs-7 text-dark fw-bold">${numStr}${item.problem_name}</td>
+                                `;
+                                taskHistoryBody.appendChild(tr);
+                            });
+                        } else {
+                            taskHistoryBody.innerHTML = `<tr><td colspan="2" class="text-center text-secondary-custom py-3">No task history found.</td></tr>`;
+                        }
+                    } catch (err) {
+                        console.error("Error loading task history:", err);
+                        taskHistoryBody.innerHTML = `<tr><td colspan="2" class="text-center text-danger py-3">Failed to load history.</td></tr>`;
+                    }
+                });
             }
             
             // Initial load

@@ -1363,13 +1363,69 @@ def api_leaderboard():
         'active_year': year
     })
 
+@app.route('/api/daily-task', methods=['GET'])
+def api_daily_task():
+    ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
+    today_date = ist_now.date()
+    
+    from models import DailyTask
+    task = DailyTask.query.filter_by(date=today_date).first()
+    return jsonify({
+        'status': 'success',
+        'task': task.to_dict() if task else None,
+        'date': today_date.strftime('%B %d, %Y')
+    })
+
+@app.route('/api/daily-tasks/history', methods=['GET'])
+def api_daily_tasks_history():
+    ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
+    today_date = ist_now.date()
+    
+    from models import DailyTask
+    tasks = DailyTask.query.filter(DailyTask.date < today_date).order_by(DailyTask.date.desc()).all()
+    return jsonify({
+        'status': 'success',
+        'history': [t.to_dict() for t in tasks]
+    })
+
+@app.route('/api/admin/daily-task', methods=['POST'])
+def api_admin_daily_task():
+    if not verify_admin_auth():
+        return jsonify({'status': 'error', 'message': 'Unauthorized admin access.'}), 401
+        
+    data = request.json or {}
+    prob_no = str(data.get('problem_number', '')).strip()
+    prob_name = str(data.get('problem_name', '')).strip()
+    
+    if not prob_name:
+        return jsonify({'status': 'error', 'message': 'Problem name is required.'}), 400
+        
+    ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
+    today_date = ist_now.date()
+    
+    from models import DailyTask
+    task = DailyTask.query.filter_by(date=today_date).first()
+    if task:
+        task.problem_number = prob_no
+        task.problem_name = prob_name
+    else:
+        task = DailyTask(problem_number=prob_no, problem_name=prob_name, date=today_date)
+        db.session.add(task)
+        
+    try:
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Daily task saved successfully.', 'task': task.to_dict()})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': f'Error saving daily task: {e}'}), 500
+
 @app.route('/api/student/<int:student_id>', methods=['GET'])
 def api_student_profile(student_id):
     student = Student.query.get_or_404(student_id)
     
     # Check if last_updated is more than 3 minutes ago or is None
     # If so, do a quick single-student update before returning profile
-    now = datetime.now()
+    now = datetime.utcnow()
     is_stale = False
     if not student.last_updated:
         is_stale = True

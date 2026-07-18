@@ -195,7 +195,7 @@ def update_single_student(student_id, app):
             student.ranking = ranking
             if avatar_url:
                 student.avatar_url = avatar_url
-            student.last_updated = datetime.now()
+            student.last_updated = datetime.utcnow()
             
             # Update Submissions
             recent_subs = data.get("recentAcSubmissionList") or []
