@@ -1089,6 +1089,26 @@ def get_current_student_from_request():
             pass
     return None
 
+def trigger_quick_update_for_student_if_stale(student, app):
+    if not student:
+        return
+    now = datetime.utcnow()
+    is_stale = False
+    if not student.last_updated:
+        is_stale = True
+    else:
+        diff = now - student.last_updated
+        if diff.total_seconds() > 120: # 2 minutes
+            is_stale = True
+            
+    if is_stale:
+        try:
+            from scheduler import update_single_student
+            update_single_student(student.id, app)
+            db.session.refresh(student)
+        except Exception as e:
+            print(f"Error during implicit quick update: {e}")
+
 def verify_admin_auth():
     auth_token = request.headers.get('X-Admin-Auth')
     return auth_token == 'admin456@'
@@ -1145,6 +1165,7 @@ def api_dashboard():
     year = request.args.get('year', '').strip()
     
     student = get_current_student_from_request()
+    trigger_quick_update_for_student_if_stale(student, app)
     
     # Base query for classmates
     query_filter = Student.query.filter_by(is_active=True)
@@ -1268,6 +1289,7 @@ def api_leaderboard():
     default_dept = 'ALL'
     default_year = 'ALL'
     student = get_current_student_from_request()
+    trigger_quick_update_for_student_if_stale(student, app)
     if student:
         default_dept = student.department
         default_year = str(student.academic_year)
@@ -1433,24 +1455,7 @@ def api_admin_delete_daily_task(task_id):
 def api_student_profile(student_id):
     student = Student.query.get_or_404(student_id)
     
-    # Check if last_updated is more than 3 minutes ago or is None
-    # If so, do a quick single-student update before returning profile
-    now = datetime.utcnow()
-    is_stale = False
-    if not student.last_updated:
-        is_stale = True
-    else:
-        diff = now - student.last_updated
-        if diff.total_seconds() > 180: # 3 minutes
-            is_stale = True
-            
-    if is_stale:
-        try:
-            from scheduler import update_single_student
-            update_single_student(student.id, app)
-            db.session.refresh(student)
-        except Exception as e:
-            print(f"Error during on-demand single student update: {e}")
+    trigger_quick_update_for_student_if_stale(student, app)
     
     all_students = Student.query.filter_by(is_active=True).order_by(Student.total_solved.desc()).all()
     class_rank = next((idx + 1 for idx, s in enumerate(all_students) if s.id == student.id), "-")
@@ -1545,6 +1550,8 @@ def api_compare():
     if s1_id and s2_id:
         s1 = Student.query.get(s1_id)
         s2 = Student.query.get(s2_id)
+        trigger_quick_update_for_student_if_stale(s1, app)
+        trigger_quick_update_for_student_if_stale(s2, app)
         
     if s1 and s1 not in all_students:
         all_students.append(s1)
