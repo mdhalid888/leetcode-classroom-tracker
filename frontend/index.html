@@ -121,42 +121,7 @@
                         </div>
                     </div>
 
-                    <!-- Weekly Report block -->
-                    <div id="weeklyReportCard" class="card-glass p-4 mb-4" style="display: none;">
-                        <h3 class="mb-4 fs-4"><i class="bi bi-calendar-event-fill text-info me-2"></i>Weekly Classroom Summary</h3>
-                        <div class="row g-3">
-                            <div class="col-sm-6">
-                                <div class="p-3 border border-secondary border-opacity-10 rounded-3">
-                                    <div class="fs-7 text-secondary-custom mb-1"><i class="bi bi-trophy text-warning"></i> Top Solver</div>
-                                    <div id="weeklyTopSolver" class="fs-6 fw-bold">-</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="p-3 border border-secondary border-opacity-10 rounded-3">
-                                    <div class="fs-7 text-secondary-custom mb-1"><i class="bi bi-graph-up text-easy"></i> Most Active</div>
-                                    <div id="weeklyMostActive" class="fs-6 fw-bold">-</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="p-3 border border-secondary border-opacity-10 rounded-3">
-                                    <div class="fs-7 text-secondary-custom mb-1"><i class="bi bi-star-fill text-info"></i> Top Improvement</div>
-                                    <div id="weeklyTopImprovement" class="fs-6 fw-bold">-</div>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="p-3 border border-secondary border-opacity-10 rounded-3">
-                                    <div class="fs-7 text-secondary-custom mb-1"><i class="bi bi-calculator text-success"></i> Solves Average</div>
-                                    <div id="weeklySolvesAvg" class="fs-6 fw-bold">-</div>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="p-3 border border-secondary border-opacity-10 rounded-3">
-                                    <div class="fs-7 text-secondary-custom mb-1"><i class="bi bi-slash-circle text-danger"></i> Inactive Members this Week</div>
-                                    <div id="weeklyInactiveMembers" class="fs-7 text-danger fw-semibold">-</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+
 
                     <!-- Recent Activity Feed -->
                     <div class="card-glass p-4">
@@ -369,18 +334,7 @@
                             `;
                         }
                         
-                        // Render Weekly Summary
-                        if (data.weekly_report) {
-                            document.getElementById("weeklyReportCard").style.display = "block";
-                            document.getElementById("weeklyTopSolver").textContent = data.weekly_report.top_solver || "None";
-                            document.getElementById("weeklyMostActive").textContent = data.weekly_report.most_active || "None";
-                            document.getElementById("weeklyTopImprovement").textContent = data.weekly_report.top_improvement || "None";
-                            document.getElementById("weeklySolvesAvg").textContent = `${data.weekly_report.problems_solved} solves (Avg: ${data.weekly_report.average_solves} / student)`;
-                            document.getElementById("weeklyInactiveMembers").textContent = data.weekly_report.inactive_members || "None";
-                        } else {
-                            document.getElementById("weeklyReportCard").style.display = "none";
-                        }
-                        
+
                         // Render Activity Feed
                         const activityFeed = document.getElementById("recentActivityFeed");
                         activityFeed.innerHTML = "";
