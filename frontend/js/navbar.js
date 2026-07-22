@@ -162,4 +162,29 @@ document.addEventListener("DOMContentLoaded", () => {
             </footer>
         `;
     }
+
+    // Inject watermark
+    const watermark = document.createElement("div");
+    watermark.id = "dev-watermark";
+    watermark.style.cssText = `
+        position: fixed;
+        bottom: 12px;
+        right: 12px;
+        z-index: 9999;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: rgba(100, 116, 139, 0.7);
+        background: rgba(248, 250, 252, 0.85);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        padding: 4px 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        pointer-events: none;
+        letter-spacing: 0.02em;
+        font-family: 'Outfit', 'Inter', sans-serif;
+    `;
+    watermark.innerText = "Developed by Mohamed Halid P, Shai Prathap R (IT-23 Batch)";
+    document.body.appendChild(watermark);
 });
