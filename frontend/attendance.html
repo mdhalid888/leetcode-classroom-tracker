@@ -29,14 +29,41 @@
                     <p class="text-secondary-custom mb-0">Track student solving consistency day-by-day for <strong id="monthNameHeader">-</strong>.</p>
                 </div>
                 
-                <!-- Month Selector Form -->
-                <div class="mt-3 mt-md-0 d-flex gap-2">
-                    <select id="monthSelect" class="form-select form-select-custom rounded-pill px-3 py-1 fs-7" style="width: auto; min-width: 120px;">
-                        <!-- Rendered dynamically -->
-                    </select>
-                    <select id="yearSelect" class="form-select form-select-custom rounded-pill px-3 py-1 fs-7" style="width: auto; min-width: 100px;">
-                        <!-- Rendered dynamically -->
-                    </select>
+                <!-- Filters Selector Form -->
+                <div class="mt-3 mt-md-0 d-flex flex-wrap gap-2 align-items-center">
+                    <div class="d-flex align-items-center gap-1">
+                        <label for="deptSelect" class="fs-7 fw-semibold text-secondary-custom mb-0">Dept:</label>
+                        <select id="deptSelect" class="form-select form-select-custom rounded-pill px-3 py-1 fs-7" style="width: auto; min-width: 80px;">
+                            <option value="ALL">All</option>
+                            <option value="CSE">CSE</option>
+                            <option value="IT">IT</option>
+                            <option value="CCE">CCE</option>
+                            <option value="AI ML">AI ML</option>
+                            <option value="CYBER">CYBER</option>
+                        </select>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <label for="acadYearSelect" class="fs-7 fw-semibold text-secondary-custom mb-0">Year:</label>
+                        <select id="acadYearSelect" class="form-select form-select-custom rounded-pill px-3 py-1 fs-7" style="width: auto; min-width: 80px;">
+                            <option value="ALL">All</option>
+                            <option value="4">4</option>
+                            <option value="3">3</option>
+                            <option value="2">2</option>
+                            <option value="1">1</option>
+                        </select>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <label for="monthSelect" class="fs-7 fw-semibold text-secondary-custom mb-0">Month:</label>
+                        <select id="monthSelect" class="form-select form-select-custom rounded-pill px-3 py-1 fs-7" style="width: auto; min-width: 100px;">
+                            <!-- Rendered dynamically -->
+                        </select>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <label for="yearSelect" class="fs-7 fw-semibold text-secondary-custom mb-0">Cal Year:</label>
+                        <select id="yearSelect" class="form-select form-select-custom rounded-pill px-3 py-1 fs-7" style="width: auto; min-width: 90px;">
+                            <!-- Rendered dynamically -->
+                        </select>
+                    </div>
                     <button id="applyFilterBtn" class="btn btn-sm btn-easy text-dark fw-bold rounded-pill px-3">Apply</button>
                 </div>
             </div>
@@ -88,6 +115,8 @@
             const student = studentData ? JSON.parse(studentData) : null;
             const studentId = student ? student.id : '';
             
+            const deptSelect = document.getElementById("deptSelect");
+            const acadYearSelect = document.getElementById("acadYearSelect");
             const monthSelect = document.getElementById("monthSelect");
             const yearSelect = document.getElementById("yearSelect");
             const applyBtn = document.getElementById("applyFilterBtn");
@@ -105,9 +134,11 @@
                 
                 const month = monthSelect.value || '';
                 const year = yearSelect.value || '';
+                const dept = deptSelect.value || '';
+                const academicYear = acadYearSelect.value || '';
                 
                 try {
-                    const url = `${API_BASE_URL}/api/attendance?student_id=${studentId}&month=${month}&year=${year}`;
+                    const url = `${API_BASE_URL}/api/attendance?student_id=${studentId}&month=${month}&year=${year}&dept=${dept}&academic_year=${academicYear}`;
                     const response = await fetch(url);
                     const data = await response.json();
                     
@@ -137,6 +168,12 @@
                                 yearSelect.appendChild(option);
                             });
                             
+                            if (data.active_dept) {
+                                deptSelect.value = data.active_dept;
+                            }
+                            if (data.active_academic_year) {
+                                acadYearSelect.value = data.active_academic_year;
+                            }
                             initialLoad = false;
                         }
                         

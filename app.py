@@ -1580,14 +1580,26 @@ def api_attendance():
     days = list(range(1, num_days + 1))
     month_name = f"{calendar.month_name[month]} {year}"
     
-    class_dept = "IT"
-    class_year = 4
+    default_dept = "IT"
+    default_year = "4"
     student = get_current_student_from_request()
     if student:
-        class_dept = student.department
-        class_year = student.academic_year
+        default_dept = student.department
+        default_year = str(student.academic_year)
         
-    students = Student.query.filter_by(department=class_dept, academic_year=class_year, is_active=True).order_by(Student.name).all()
+    dept = request.args.get('dept', default_dept).strip().upper()
+    acad_year = request.args.get('academic_year', default_year).strip()
+    
+    query = Student.query.filter_by(is_active=True)
+    if dept != 'ALL':
+        query = query.filter_by(department=dept)
+    if acad_year != 'ALL':
+        try:
+            query = query.filter_by(academic_year=int(acad_year))
+        except ValueError:
+            pass
+            
+    students = query.order_by(Student.name).all()
     
     attendance_records = []
     for s in students:
@@ -1643,6 +1655,8 @@ def api_attendance():
         'attendance_records': attendance_records,
         'active_month': month,
         'active_year': year,
+        'active_dept': dept,
+        'active_academic_year': acad_year,
         'months_list': months_list,
         'years_list': years_list
     })
